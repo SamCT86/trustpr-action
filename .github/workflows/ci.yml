@@ -1,0 +1,168 @@
+# Read-only source verification; publication has a separate strict preflight.
+name: TrustPR read-only CI
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: trustpr-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout with no persistent credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5, resolved 2026-10-10
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Setup Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, resolved 2026-10-10
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Test TrustPR
+        run: npm test
+      - name: Synthetic CLI and receipt roundtrip
+        shell: bash
+        run: |
+          set -euo pipefail
+          node bin/trustpr.mjs --demo --output "$RUNNER_TEMP/trustpr-demo" > /dev/null
+          node bin/trustpr.mjs --verify-receipt "$RUNNER_TEMP/trustpr-demo/receipt.json" --output "$RUNNER_TEMP/trustpr-verified" > /dev/null
+          cmp "$RUNNER_TEMP/trustpr-demo/receipt.json" "$RUNNER_TEMP/trustpr-verified/receipt.json"
+          cmp "$RUNNER_TEMP/trustpr-demo/summary.md" "$RUNNER_TEMP/trustpr-verified/summary.md"
+      - name: Verify the installed npm executable, not just node bin/trustpr.mjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          install_root="$(mktemp -d "$RUNNER_TEMP/trustpr-install-XXXXXX")"
+          npm pack --ignore-scripts --pack-destination "$install_root" --silent > /dev/null
+          npm install --offline --ignore-scripts --no-audit --no-fund \
+            --prefix "$install_root/consumer" "$install_root"/*.tgz --silent > /dev/null
+          "$install_root/consumer/node_modules/.bin/trustpr" --help | grep -Fq 'TrustPR — read-only evidence receipts'
+          "$install_root/consumer/node_modules/.bin/trustpr" --demo | node -e '
+            let raw="";
+            process.stdin.setEncoding("utf8");
+            process.stdin.on("data", chunk => raw += chunk);
+            process.stdin.on("end", () => {
+              const receipt=JSON.parse(raw);
+              if(receipt.receipt_schema_version!=="trustpr-receipt-v1"
+                || receipt.core?.declared?.evidence_source!=="SYNTHETIC_DEMO"
+                || !receipt.core?.observed?.changed_entries?.length)
+                throw new Error("INSTALLED_BIN_DEMO_INVALID");
+            });
+          '
+  action-canary:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout the reviewed TrustPR source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Collect the actual pull request event
+        id: receipt
+        uses: ./
+        with:
+          repository: ${{ github.repository }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          git-directory: ${{ github.workspace }}/.git
+      - name: Verify saved receipt and event binding
+        env:
+          RECEIPT_PATH: ${{ steps.receipt.outputs.receipt-path }}
+          RECEIPT_STATUS: ${{ steps.receipt.outputs.receipt-status }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          import {parseStrictJson} from './src/strict-json.mjs';
+          import {verifyReceipt} from './src/receipt.mjs';
+          const receipt=parseStrictJson(await fs.readFile(process.env.RECEIPT_PATH));
+          const event=parseStrictJson(await fs.readFile(process.env.GITHUB_EVENT_PATH));
+          verifyReceipt(receipt);
+          const subject=receipt.core.subject;
+          if(receipt.core.validity.status!=='PARTIAL'
+            || process.env.RECEIPT_STATUS!=='PARTIAL'
+            || subject.repository_id!==String(event.repository.id)
+            || subject.pull_request_number!==String(event.pull_request.number)
+            || subject.base_commit_sha!==event.pull_request.base.sha
+            || subject.head_commit_sha!==event.pull_request.head.sha
+            || !receipt.core.observed.changed_entries.length
+            || receipt.core.unknowns.some(x=>['GIT_DIFF_NOT_COMPLETE','MERGE_BASE_UNAVAILABLE',
+              'PUBLIC_GIT_OBJECTS_UNAVAILABLE'].includes(x.stable_code)))
+            throw new Error('ACTION_CANARY_SUBJECT_OR_STATUS_MISMATCH');
+          console.log(JSON.stringify({subject,core_digest:receipt.integrity.core_digest,
+            status:receipt.core.validity.status,authenticity:receipt.authenticity,
+            policy_binding:receipt.core.declared.policy_binding,
+            changed_entries:receipt.core.observed.changed_entries.length,
+            unknowns:receipt.core.unknowns.map(x=>x.stable_code)}));
+          NODE
+      - name: Preserve receipt and summary for provider readback
+        if: always() && steps.receipt.outputs.receipt-path != ''
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6, resolved 2026-10-10
+        with:
+          name: trustpr-action-receipt
+          path: |
+            ${{ steps.receipt.outputs.receipt-path }}
+            ${{ steps.receipt.outputs.summary-path }}
+          if-no-files-found: error
+          retention-days: 7
+  live-cli:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      pull-requests: read
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [same-repository, fork]
+    steps:
+      - name: Checkout TrustPR source without persistent credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Setup Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install the packed CLI into a fresh consumer
+        shell: bash
+        run: |
+          set -euo pipefail
+          install_root="$(mktemp -d "$RUNNER_TEMP/trustpr-live-install-XXXXXX")"
+          npm pack --ignore-scripts --pack-destination "$install_root" --silent > /dev/null
+          npm install --offline --ignore-scripts --no-audit --no-fund \
+            --prefix "$install_root/consumer" "$install_root"/*.tgz --silent > /dev/null
+          echo "TRUSTPR_INSTALLED_BIN=$install_root/consumer/node_modules/.bin/trustpr" >> "$GITHUB_ENV"
+      - name: Collect pinned public PR and compare paths to GitHub
+        env:
+          LIVE_KIND: ${{ matrix.kind }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verify-live-pr.mjs
+      - name: Preserve public PR receipts for readback
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: trustpr-live-${{ matrix.kind }}
+          path: |
+            ${{ runner.temp }}/trustpr-live/receipt.json
+            ${{ runner.temp }}/trustpr-live/summary.md
+          if-no-files-found: error
+          retention-days: 7

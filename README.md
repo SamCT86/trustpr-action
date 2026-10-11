@@ -93,10 +93,10 @@ Optional artifact-byte and pinned offline attestation modules are retained and t
 
 ## Release verification
 
-This initial source release includes the read-only CLI, Action, runtime tests and manual release gates. GitHub-hosted CI workflows are not included yet: the publishing connection lacks the GitHub `workflow` permission. The preceding private source review passed 201 tests; that evidence does not establish a hosted public CI result.
+The read-only GitHub CI workflow runs the runtime tests, the installed npm executable and a source-repository Action canary bound to an actual pull request event. It also collects pinned public same-repository/fork PR fixtures, compares paths to GitHub, and verifies receipt/summary byte roundtrips. Each CI result applies to its exact tested commit.
 
-Before broader use, verify an actual consumer fork/Dependabot Action event with the published full-SHA pin and read-only permissions. That public consumer event canary remains pending. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
+A separate public consumer fork/Dependabot Action event must be verified before broader use. Public CLI fixtures and the source-repository canary do not replace that consumer validation. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
 
-Run `npm test`, `npm run test:release`, and `bash scripts/check-public-history.sh .` on a complete clone of the exact release. The manual release gate checks the MIT text and exact distribution files. The history gate checks the complete reachable Git history for known internal runtime metadata. Neither gate proves copyright ownership, publication permission or hosted CI. The project owner has separately approved this source publication and supplied the copyright-holder name.
+The manual `publication-preflight.yml` workflow checks the MIT text, exact distribution files and complete reachable Git history. It never publishes or approves a release. You can run the same checks locally with `npm test`, `npm run test:release`, and `bash scripts/check-public-history.sh .`. Neither gate proves copyright ownership, publication permission or that hosted CI passed. The project owner separately approved publication and supplied the copyright-holder name.
 
 The release package intentionally remains `private: true` to prevent accidental npm registry publication. Install from a reviewed local tarball or use the source CLI; no registry publication is claimed.
