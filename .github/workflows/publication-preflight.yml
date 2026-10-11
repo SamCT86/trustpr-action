@@ -1,0 +1,27 @@
+# Read-only release checks. This workflow never publishes or approves a release.
+name: TrustPR publication preflight
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publication-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout complete history without persistent credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Setup Node.js 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify MIT body and distribution files
+        id: license
+        run: npm run test:release
+      - name: Verify complete clean publication history
+        if: always()
+        run: bash scripts/check-public-history.sh .
