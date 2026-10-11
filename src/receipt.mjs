@@ -4,6 +4,8 @@ import { assertScalarString } from './strict-json.mjs';
 export const RUNTIME_VERSION='TRUSTPR_RUNTIME_REBASELINE_20261007_V1';
 const OID=/^[0-9a-f]{40}$/;
 const ID=/^[1-9][0-9]{0,19}$/;
+const isId=value=>typeof value==='string'&&ID.test(value);
+const isOid=value=>typeof value==='string'&&OID.test(value);
 const STATES=new Set(['VALID','PARTIAL','STALE','INVALID']);
 const SUBJECT=['base_commit_sha','head_commit_sha','merge_base_sha','pull_request_number','repository_id'];
 const REQUIRED=['git_diff','github_metadata'];
@@ -13,7 +15,11 @@ function closed(value,keys,code){
   if(!object(value)||Object.keys(value).sort().join('\0')!==[...keys].sort().join('\0'))fail(code);
 }
 function code(value){if(typeof value!=='string'||! /^[A-Z][A-Z0-9_]{0,79}$/.test(value))fail('INVALID_REASON_CODE');return value;}
-function list(value){if(!Array.isArray(value)||value.length>10000)fail('RECEIPT_LIST_LIMIT');return value;}
+function list(value){
+  if(!Array.isArray(value)||value.length>10000)fail('RECEIPT_LIST_LIMIT');
+  for(let i=0;i<value.length;i++)if(!Object.hasOwn(value,i))fail('SPARSE_RECEIPT_LIST');
+  return value;
+}
 function text(value){assertScalarString(value);if(Buffer.byteLength(value)>4096)fail('RECEIPT_STRING_LIMIT');return value;}
 function record(codeValue,source){return{stable_code:code(codeValue),field_or_source_tuple:text(source)};}
 export function validateTarget(target){
@@ -21,9 +27,9 @@ export function validateTarget(target){
   for(const key of Object.keys(target))if(!['owner','repo','prNumber','expectedBaseSha','expectedHeadSha','repositoryId'].includes(key))fail('TARGET_INVALID');
   if(typeof target.owner!=='string'||! /^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/.test(target.owner))fail('TARGET_INVALID');
   if(typeof target.repo!=='string'||! /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/.test(target.repo)||target.repo.includes('..'))fail('TARGET_INVALID');
-  if(typeof target.prNumber!=='string'||!ID.test(target.prNumber)||!Number.isSafeInteger(Number(target.prNumber)))fail('TARGET_INVALID');
-  for(const key of ['expectedBaseSha','expectedHeadSha'])if(target[key]!==undefined&&!OID.test(target[key]))fail('TARGET_INVALID');
-  if(target.repositoryId!==undefined&&!ID.test(target.repositoryId))fail('TARGET_INVALID');
+  if(typeof target.prNumber!=='string'||!isId(target.prNumber)||!Number.isSafeInteger(Number(target.prNumber)))fail('TARGET_INVALID');
+  for(const key of ['expectedBaseSha','expectedHeadSha'])if(target[key]!==undefined&&!isOid(target[key]))fail('TARGET_INVALID');
+  if(target.repositoryId!==undefined&&!isId(target.repositoryId))fail('TARGET_INVALID');
   return target;
 }
 export function snapshotIdentity(subject){
@@ -38,24 +44,24 @@ function validateChanged(entry){
   if(!bytes.length||bytes.length>4096||bytes.includes(0)||bytes.toString('base64')!==entry.raw_path_b64)fail('INVALID_PATH_BASE64');
   if(!['ADD','DELETE','MODIFY','TYPE_CHANGE'].includes(entry.change_type))fail('INVALID_CHANGE_TYPE');
   for(const key of ['old_mode','new_mode'])if(!['000000','100644','100755','120000','160000'].includes(entry[key]))fail('INVALID_GIT_MODE');
-  for(const key of ['old_blob_sha','new_blob_sha'])if(!OID.test(entry[key]))fail('INVALID_GIT_OID');
+  for(const key of ['old_blob_sha','new_blob_sha'])if(!isOid(entry[key]))fail('INVALID_GIT_OID');
   return entry;
 }
 function selectedCheck(check,head){
-  if(check?.provider!=='github'||!ID.test(check.check_run_id??'')||!OID.test(check.head_sha??''))fail('INVALID_CHECK_RECORD');
+  if(check?.provider!=='github'||!isId(check.check_run_id??'')||!isOid(check.head_sha??''))fail('INVALID_CHECK_RECORD');
   if(!['queued','in_progress','completed','pending','waiting','requested'].includes(check.status))fail('INVALID_CHECK_STATUS');
   if(check.conclusion!==null&&!['success','failure','neutral','cancelled','skipped','timed_out','action_required','stale','startup_failure'].includes(check.conclusion))fail('INVALID_CHECK_CONCLUSION');
   const out={provider:'github',check_run_id:check.check_run_id,head_sha:check.head_sha,status:check.status,conclusion:check.conclusion,verification_state:'PROVIDER_ASSERTED'};
   for(const key of ['check_suite_id','workflow_run_id','run_attempt'])if(check[key]!==undefined&&check[key]!==null){
-    if(!ID.test(check[key]))fail('INVALID_CHECK_ID');out[key]=check[key];
+    if(!isId(check[key]))fail('INVALID_CHECK_ID');out[key]=check[key];
   }
   return out;
 }
 function selectedArtifact(artifact){
-  if(artifact?.provider!=='github'||!ID.test(artifact.artifact_id??''))fail('INVALID_ARTIFACT_RECORD');
+  if(artifact?.provider!=='github'||!isId(artifact.artifact_id??''))fail('INVALID_ARTIFACT_RECORD');
   const out={provider:'github',artifact_id:artifact.artifact_id,verification_state:'METADATA_ONLY'};
   for(const key of ['producing_run_id','attempt'])if(artifact[key]!==undefined&&artifact[key]!==null){
-    if(!ID.test(artifact[key]))fail('INVALID_ARTIFACT_ID');out[key]=artifact[key];
+    if(!isId(artifact[key]))fail('INVALID_ARTIFACT_ID');out[key]=artifact[key];
   }
   if(!['available','expired'].includes(artifact.retention_state))fail('INVALID_ARTIFACT_RETENTION');
   out.retention_state=artifact.retention_state;
@@ -75,8 +81,8 @@ export function buildReceipt({target,evidence,diff,source='GITHUB_READONLY'}){
   const unknowns=[record('TEST_EXECUTION_NOT_ESTABLISHED','checks')];
   if(!s0||!s1)unknowns.push(record('SNAPSHOT_NOT_COMPLETE','github_snapshot'));
   if(s0){
-    if(!ID.test(s0.repository_id)||s0.repository_id!==s0.base_repository_id||s0.pull_request_number!==target.prNumber||
-      !OID.test(s0.base_commit_sha)||!OID.test(s0.head_commit_sha))invalid=true;
+    if(!isId(s0.repository_id)||s0.repository_id!==s0.base_repository_id||s0.pull_request_number!==target.prNumber||
+      !isOid(s0.base_commit_sha)||!isOid(s0.head_commit_sha))invalid=true;
     if((target.repositoryId&&s0.repository_id!==target.repositoryId)||(target.expectedBaseSha&&s0.base_commit_sha!==target.expectedBaseSha)||
       (target.expectedHeadSha&&s0.head_commit_sha!==target.expectedHeadSha)){invalid=true;reasons.push({code:'REQUEST_SUBJECT_MISMATCH'});}
   }
@@ -105,7 +111,7 @@ export function buildReceipt({target,evidence,diff,source='GITHUB_READONLY'}){
     if(typeof entry.failure_code==='string'&&/^[A-Z][A-Z0-9_]{0,79}$/.test(entry.failure_code))
       unknowns.push(record(entry.failure_code,source));
   }
-  if(!OID.test(subject.merge_base_sha))unknowns.push(record('MERGE_BASE_UNAVAILABLE','git_diff'));
+  if(!isOid(subject.merge_base_sha))unknowns.push(record('MERGE_BASE_UNAVAILABLE','git_diff'));
   const status=invalid?'INVALID':stale?'STALE':unknowns.length||evidence.validity.status==='PARTIAL'||diff.status!=='VALID'?'PARTIAL':'VALID';
   if(status==='PARTIAL'&&!reasons.length)reasons.push({code:'EVIDENCE_NOT_COMPLETE'});
   const uniqueReasons=[...new Map(reasons.map(r=>[r.code,r])).values()].sort((a,b)=>a.code.localeCompare(b.code,'en'));
@@ -121,13 +127,13 @@ export function verifyReceipt(receipt){
   if(receipt.receipt_schema_version!=='trustpr-receipt-v1')fail('UNSUPPORTED_RECEIPT_SCHEMA');
   if(receipt.authenticity!=='UNAUTHENTICATED')fail('AUTHENTICITY_NOT_SUPPORTED');
   closed(receipt.integrity,['algorithm','core_digest'],'INVALID_INTEGRITY');
-  if(receipt.integrity.algorithm!=='sha256'||! /^[0-9a-f]{64}$/.test(receipt.integrity.core_digest))fail('INVALID_INTEGRITY');
+  if(receipt.integrity.algorithm!=='sha256'||typeof receipt.integrity.core_digest!=='string'||! /^[0-9a-f]{64}$/.test(receipt.integrity.core_digest))fail('INVALID_INTEGRITY');
   const core=receipt.core;
   closed(core,['subject','snapshot_identity','declared','observed','unknowns','inferred','validity'],'INVALID_CORE_SHAPE');
   closed(core.subject,SUBJECT,'INVALID_SUBJECT_SHAPE');
-  if(!ID.test(core.subject.pull_request_number))fail('INVALID_PR_NUMBER');
-  if(core.subject.repository_id!==''&&!ID.test(core.subject.repository_id))fail('INVALID_REPOSITORY_ID');
-  for(const key of ['base_commit_sha','head_commit_sha','merge_base_sha'])if(core.subject[key]!==''&&!OID.test(core.subject[key]))fail('INVALID_SUBJECT_OID');
+  if(!isId(core.subject.pull_request_number))fail('INVALID_PR_NUMBER');
+  if(core.subject.repository_id!==''&&!isId(core.subject.repository_id))fail('INVALID_REPOSITORY_ID');
+  for(const key of ['base_commit_sha','head_commit_sha','merge_base_sha'])if(core.subject[key]!==''&&!isOid(core.subject[key]))fail('INVALID_SUBJECT_OID');
   if(core.snapshot_identity!==snapshotIdentity(core.subject))fail('SNAPSHOT_IDENTITY_MISMATCH');
   closed(core.declared,['policy_binding','required_evidence','evidence_source','runtime_version'],'INVALID_DECLARED');
   if(core.declared.policy_binding!=='POLICY_UNBOUND')fail('POLICY_BINDING_NOT_SUPPORTED');

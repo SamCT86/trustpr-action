@@ -1,5 +1,25 @@
+function nonemptyText(value) {
+  return typeof value === 'string' && value.trim().length > 0
+    && !/[\u0000-\u001f\u007f]/u.test(value);
+}
+
+function validSubject(item) {
+  return item !== null && typeof item === 'object'
+    && nonemptyText(item.provider) && nonemptyText(item.workflow_run_id)
+    && nonemptyText(item.run_attempt) && /^(?:0|[1-9][0-9]*)$/u.test(item.run_attempt)
+    && typeof item.head_sha === 'string' && /^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/u.test(item.head_sha);
+}
+
+function validExecution(item) {
+  return validSubject(item) && nonemptyText(item.evidence_id)
+    && typeof item.command === 'string' && item.command.trim().length > 0 && !item.command.includes('\u0000')
+    && (Number.isSafeInteger(item.exit_code)
+      || (typeof item.exit_code === 'string' && /^(?:0|-?[1-9][0-9]*)$/u.test(item.exit_code)));
+}
+
 function sameExecutionSubject(check, evidence, expectedHead) {
-  return evidence?.provider === check?.provider
+  return validSubject(check) && validExecution(evidence)
+    && evidence?.provider === check?.provider
     && evidence?.workflow_run_id === check?.workflow_run_id
     && evidence?.run_attempt === check?.run_attempt
     && evidence?.head_sha === expectedHead

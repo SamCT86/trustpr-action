@@ -79,6 +79,9 @@ async function readPaged(client, method, args, collectionKind, immutableSubject)
   let providerCapCode = null;
   let reportedTotal = null;
   let reportedTotalChanged = false;
+  const seenIdentities = new Map();
+  let identityFailure = null;
+  const identityField = {check_suites:'check_suite_id',check_runs:'check_run_id',workflow_runs:'workflow_run_id',artifacts:'artifact_id'}[collectionKind];
   const limit = pageLimit(client);
   while (true) {
     let page;
@@ -99,7 +102,17 @@ async function readPaged(client, method, args, collectionKind, immutableSubject)
         retryable: false, retry_after_ms: null
       }};
     }
-    items.push(...page.items);
+    for (const item of page.items) {
+      const identity = item?.[identityField];
+      if (identity === undefined || identity === null) { items.push(item); continue; }
+      const key = JSON.stringify([item.provider, identity]);
+      const fingerprint = JSON.stringify(item);
+      if (seenIdentities.has(key)) {
+        const conflict = seenIdentities.get(key) !== fingerprint;
+        if (conflict) { identityFailure = 'PROVIDER_IDENTITY_CONFLICT'; items.push(item); }
+        else if (!identityFailure) identityFailure = 'PROVIDER_DUPLICATE_IDENTITY';
+      } else { seenIdentities.set(key, fingerprint); items.push(item); }
+    }
     pages += 1;
     const pageTotal = page.reported_total_count;
     if (typeof pageTotal === 'number' && Number.isSafeInteger(pageTotal) && pageTotal >= 0) {
@@ -118,11 +131,11 @@ async function readPaged(client, method, args, collectionKind, immutableSubject)
       }};
     }
   }
-  if (providerCapCode) {
+  if (identityFailure || providerCapCode) {
     return { items, evidence: {
       provider: 'github', collection_kind: collectionKind, immutable_subject: immutableSubject,
       complete: false, item_count: String(items.length), pages_observed: String(pages),
-      terminal_state: 'TRANSIENT_FAILURE', failure_code: providerCapCode,
+      terminal_state: 'TRANSIENT_FAILURE', failure_code: identityFailure || providerCapCode,
       retryable: false, retry_after_ms: null
     }};
   }
