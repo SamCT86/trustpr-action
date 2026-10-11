@@ -16,6 +16,19 @@ TrustPR is MIT-licensed, copyright © 2026 Sarmad Tawfeek. The canonical release
 
 Node.js 24 or later and Git at `/usr/bin/git` on Linux. No npm dependencies are required. The source CLI works directly; an owner-reviewed package can also be installed from its local tarball with `npm install --offline --ignore-scripts /path/to/package.tgz`, then run with `npx --offline trustpr --help`. No npm registry publication is claimed.
 
+## Install the verified prerelease
+
+The [v0.1.0 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.0) includes a dependency-free tarball and `SHA256SUMS`. Download both assets into one directory, then run:
+
+```bash
+sha256sum -c SHA256SUMS
+npm install --offline --ignore-scripts --no-audit --no-fund ./trustpr-runtime-rebaseline-0.1.0.tgz
+./node_modules/.bin/trustpr --help
+./node_modules/.bin/trustpr --repo OWNER/REPO --pr NUMBER --output ./new-receipt-directory
+```
+
+The release source is pinned to `3ac08375bed6380285fcfd8019cef0cb7931dda8`. See the release notes for its exact package checksum, hosted verification and evidence limits.
+
 ## Collect a real public pull request
 
 ```bash
@@ -61,17 +74,32 @@ This validates the bounded schema, subject identity and digest, then regenerates
 
 `action.yml` and `bin/action.mjs` implement the same runtime. The Action accepts only the `pull_request` event and binds repository, pull request number, base SHA and head SHA to that event before reading provider evidence. `pull_request_target` is rejected.
 
-Pin the Action to its actual immutable 40-character commit SHA. The included workflow generator in `src/action-setup.mjs` produces the consumer workflow for `SamCT86/trustpr-action` with:
+Save this as `.github/workflows/trustpr.yml` in a public consumer repository. The full commit pin identifies the verified v0.1.0 Action:
 
 ```yaml
+name: TrustPR evidence receipt
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   actions: read
   checks: read
   contents: read
   pull-requests: read
+jobs:
+  trustpr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: SamCT86/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8
+        with:
+          repository: ${{ github.repository }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
 ```
 
-The Action needs no external service account, GitHub App or write permission. It writes a runner summary and local receipt paths; it does not post comments, upload artifacts, change checks or merge. A public consumer fork/Dependabot Action event canary must be verified before broader use.
+The Action needs no external service account, GitHub App or write permission for this public path. It writes a runner summary and local receipt paths; it does not post comments, upload artifacts, change checks or merge. The included workflow generator in `src/action-setup.mjs` accepts an explicit full commit SHA for the same fixed repository.
 
 For private repositories, the caller can supply `git-directory` as an absolute directory containing already fetched Git objects. TrustPR reads that store with all Git network protocols disabled. Fetch the exact base/head objects with your own read-only checkout step and `persist-credentials: false`; supply a complete enough history for the merge base. TrustPR does not check out or execute PR code. Missing objects remain explicitly incomplete. Omit the input to retain the credential-free public Git fetch.
 
@@ -95,7 +123,7 @@ Optional artifact-byte and pinned offline attestation modules are retained and t
 
 The read-only GitHub CI workflow runs the runtime tests, the installed npm executable and a source-repository Action canary bound to an actual pull request event. It also collects pinned public same-repository/fork PR fixtures, compares paths to GitHub, and verifies receipt/summary byte roundtrips. Each CI result applies to its exact tested commit.
 
-A separate public consumer fork/Dependabot Action event must be verified before broader use. Public CLI fixtures and the source-repository canary do not replace that consumer validation. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
+The v0.1.0 Action pin above passed real public consumer [same-repository](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/38158633148) and [Dependabot](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/38158695560) PR events with read-only permissions. Saved artifact bytes, event subjects, changed paths and rendered summaries were independently verified. The Dependabot run is not a fork Action event; the public CLI fork fixture is separate evidence. These results apply to that immutable Action pin. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
 
 The manual `publication-preflight.yml` workflow checks the MIT text, exact distribution files and complete reachable Git history. It never publishes or approves a release. You can run the same checks locally with `npm test`, `npm run test:release`, and `bash scripts/check-public-history.sh .`. Neither gate proves copyright ownership, publication permission or that hosted CI passed. The project owner separately approved publication and supplied the copyright-holder name.
 
