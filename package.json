@@ -1,0 +1,26 @@
+{
+  "name": "trustpr-runtime-rebaseline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "trustpr": "bin/trustpr.mjs"
+  },
+  "scripts": {
+    "test": "npm run test:runtime",
+    "test:runtime": "node --test test/*.test.mjs",
+    "demo": "node bin/trustpr.mjs --demo",
+    "test:release": "node scripts/check-release.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "action.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT"
+}

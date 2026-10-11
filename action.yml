@@ -1,0 +1,32 @@
+name: TrustPR evidence receipt
+description: Read-only PR evidence receipt. No merge authorization.
+inputs:
+  repository:
+    description: Base repository owner/name from the pull request event
+    required: true
+  pull-request-number:
+    description: Pull request number from the event
+    required: true
+  base-sha:
+    description: Full base commit SHA from the event
+    required: true
+  head-sha:
+    description: Full head commit SHA from the event
+    required: true
+  git-directory:
+    description: Optional absolute Git object directory already fetched by the caller; read offline without checking out or executing PR code
+    required: false
+  token:
+    description: GitHub token for read-only API requests
+    default: ${{ github.token }}
+    required: false
+outputs:
+  receipt-path:
+    description: Local JSON receipt path
+  summary-path:
+    description: Local Markdown summary path
+  receipt-status:
+    description: Evidence receipt status; never merge authorization
+runs:
+  using: node24
+  main: bin/action.mjs

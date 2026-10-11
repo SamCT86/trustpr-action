@@ -1,0 +1,102 @@
+# TrustPR
+
+TrustPR collects a pull request's Git changes and GitHub evidence into a JSON receipt and a readable summary. It makes missing or inconsistent evidence visible before someone relies on a green check.
+
+Run the local demo:
+
+```bash
+npm run demo
+```
+
+The demo creates a temporary synthetic Git repository, generates a receipt, and removes the repository. It makes no network request and executes no code from a pull request.
+
+TrustPR is MIT-licensed, copyright © 2026 Sarmad Tawfeek. The canonical release repository is `SamCT86/trustpr-action`; see `LICENSE` for the redistribution terms. No npm registry publication is claimed.
+
+## Requirements
+
+Node.js 24 or later and Git at `/usr/bin/git` on Linux. No npm dependencies are required. The source CLI works directly; an owner-reviewed package can also be installed from its local tarball with `npm install --offline --ignore-scripts /path/to/package.tgz`, then run with `npx --offline trustpr --help`. No npm registry publication is claimed.
+
+## Collect a real public pull request
+
+```bash
+node bin/trustpr.mjs --repo OWNER/REPO --pr NUMBER --output ./new-receipt-directory
+```
+
+The command prints JSON and creates `receipt.json` and `summary.md` in a new directory. Existing output directories are refused.
+
+For an expected immutable subject, add both:
+
+```text
+--base-sha FULL_40_HEX_BASE_SHA --head-sha FULL_40_HEX_HEAD_SHA
+```
+
+If the provider reports a different subject, the receipt is INVALID.
+
+The default path fetches the exact commits into a temporary bare Git repository from a fixed public GitHub URL. It never checks out the pull request or runs its code. It removes that temporary store afterward. To use objects already available locally, add `--git-directory /absolute/path/to/.git`; that collector permits no network protocols.
+
+An optional `GITHUB_TOKEN` environment variable is used only for GET requests to `https://api.github.com`. Never put a token on the command line. The Git-object fetch receives no credentials. Private repositories or inaccessible fork objects can therefore leave the Git evidence incomplete.
+
+## Read the result
+
+- **PARTIAL:** some evidence is missing or unknown.
+- **STALE:** the pull request changed during collection.
+- **INVALID:** identity, generation, or required structure is inconsistent.
+- **VALID:** evidence is internally coherent and complete for its declared scope; it never means safe to merge.
+
+The default runtime collects GitHub metadata. It does not retrieve artifact bytes or establish which test commands ran. GitHub's run-scoped artifact list also does not establish which run attempt produced an artifact; TrustPR leaves that attempt unknown rather than copying the current run attempt. A check suite association does not establish an individual check's producing attempt either. Those facts stay explicitly unknown, so ordinary coherent runs return PARTIAL. A successful CLI command means a receipt was generated; it is not a merge gate. The GitHub Action fails after saving the receipt when evidence is INVALID or STALE. PARTIAL emits a warning and succeeds so the incomplete evidence remains visible; it never authorizes a merge.
+
+Receipts stay **UNAUTHENTICATED** and **POLICY_UNBOUND**. Their SHA-256 digest detects changes relative to the recorded digest; someone can rewrite both receipt and digest. It is not a signature, proof of authorship, or authorization.
+
+Missing or malformed provider counts, commit identities, check records and artifact expiry metadata leave the affected collection incomplete. Valid records on that page remain visible; an observed conflicting commit still makes the receipt INVALID. The JSON receipt and summary preserve stable collection failure codes such as `PROVIDER_RESPONSE_INVALID`, `PERMISSION_DENIED` and `RATE_LIMITED`, without copying provider error messages.
+
+## Verify and render a saved receipt
+
+```bash
+node bin/trustpr.mjs --verify-receipt receipt.json --output ./new-verification-directory
+```
+
+This validates the bounded schema, subject identity and digest, then regenerates Markdown. It verifies integrity and format, not the factual truth of supplied evidence.
+
+## GitHub Action
+
+`action.yml` and `bin/action.mjs` implement the same runtime. The Action accepts only the `pull_request` event and binds repository, pull request number, base SHA and head SHA to that event before reading provider evidence. `pull_request_target` is rejected.
+
+Pin the Action to its actual immutable 40-character commit SHA. The included workflow generator in `src/action-setup.mjs` produces the consumer workflow for `SamCT86/trustpr-action` with:
+
+```yaml
+permissions:
+  actions: read
+  checks: read
+  contents: read
+  pull-requests: read
+```
+
+The Action needs no external service account, GitHub App or write permission. It writes a runner summary and local receipt paths; it does not post comments, upload artifacts, change checks or merge. A public consumer fork/Dependabot Action event canary must be verified before broader use.
+
+For private repositories, the caller can supply `git-directory` as an absolute directory containing already fetched Git objects. TrustPR reads that store with all Git network protocols disabled. Fetch the exact base/head objects with your own read-only checkout step and `persist-credentials: false`; supply a complete enough history for the merge base. TrustPR does not check out or execute PR code. Missing objects remain explicitly incomplete. Omit the input to retain the credential-free public Git fetch.
+
+## Validation and limits
+
+```bash
+npm test
+```
+
+`test:runtime` runs the runtime tests in `test/*.test.mjs`, including actual offline npm installation and Action outcome regressions. Passing these tests does not claim a historical full-regression PASS or a GitHub-hosted CI PASS.
+
+Input JSON uses `TRUSTPR_BOUNDED_INTEGER_JSON_V1`: strict UTF-8, scalar Unicode, duplicate-key rejection, safe integer numbers only, maximum 8 MiB, depth 64, and 100,000 value nodes. Fractions and exponent forms are rejected. Digest canonicalization reuses the existing renderer's bounded integer format; this does not claim support for all RFC 8785 numeric inputs.
+
+Git evidence uses SHA-1 commit/object IDs and a merge-base-to-head raw diff with rename inference disabled. The collector ignores local replacement refs, legacy graft files and commit-graph caches when reading commit ancestry. Before collecting a diff, it runs an offline Git object-integrity check with a 20-second deadline. Corrupt objects or an unsuccessful integrity check leave the diff empty and explicitly incomplete; this also applies to unrelated corrupt objects in a caller-supplied store. Paths retain their original bytes as base64. Missing objects, multiple merge bases, submodules, LFS content and inspection limits remain unknown. Diff limits are 8 MiB, 1,000 entries, 1 MiB per inspected blob and 16 MiB total inspected blob bytes. Public fetch depth is 128; shallow ancestry may leave the merge base unavailable.
+
+HTTP responses are bounded to 8 MiB. API reads reject redirects and cross-origin pagination, allow at most 500 requests, and have a three-minute transport deadline. Rate limits and read failures produce explicit unavailable evidence. No automatic provider retry or GitHub write occurs.
+
+Optional artifact-byte and pinned offline attestation modules are retained and tested separately. They do not upgrade this runtime's metadata receipts to authenticated evidence.
+
+## Release verification
+
+This initial source release includes the read-only CLI, Action, runtime tests and manual release gates. GitHub-hosted CI workflows are not included yet: the publishing connection lacks the GitHub `workflow` permission. The preceding private source review passed 201 tests; that evidence does not establish a hosted public CI result.
+
+Before broader use, verify an actual consumer fork/Dependabot Action event with the published full-SHA pin and read-only permissions. That public consumer event canary remains pending. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
+
+Run `npm test`, `npm run test:release`, and `bash scripts/check-public-history.sh .` on a complete clone of the exact release. The manual release gate checks the MIT text and exact distribution files. The history gate checks the complete reachable Git history for known internal runtime metadata. Neither gate proves copyright ownership, publication permission or hosted CI. The project owner has separately approved this source publication and supplied the copyright-holder name.
+
+The release package intentionally remains `private: true` to prevent accidental npm registry publication. Install from a reviewed local tarball or use the source CLI; no registry publication is claimed.
