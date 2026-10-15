@@ -20,7 +20,7 @@ function check(overrides = {}) {
 }
 
 test('higher run_attempt is satisfaction candidate while history is retained', () => {
-  const all = [check(), check({ run_attempt: '2', check_run_id: '200' })];
+  const all = [check({workflow_run_id:'run-1'}), check({ workflow_run_id:'run-1', run_attempt: '2', check_run_id: '200' })];
   const out = selectLogicalChecks(all, head);
   assert.equal(out.groups.length, 1);
   assert.equal(out.groups[0].attempts.length, 2);

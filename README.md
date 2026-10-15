@@ -60,7 +60,7 @@ The default runtime collects GitHub metadata. It does not retrieve artifact byte
 
 Receipts stay **UNAUTHENTICATED** and **POLICY_UNBOUND**. Their SHA-256 digest detects changes relative to the recorded digest; someone can rewrite both receipt and digest. It is not a signature, proof of authorship, or authorization.
 
-Missing or malformed provider counts, commit identities, check records and artifact expiry metadata leave the affected collection incomplete. Valid records on that page remain visible; an observed conflicting commit still makes the receipt INVALID. The JSON receipt and summary preserve stable collection failure codes such as `PROVIDER_RESPONSE_INVALID`, `PERMISSION_DENIED` and `RATE_LIMITED`, without copying provider error messages.
+Missing or malformed provider counts, commit identities, check records and artifact expiry metadata leave the affected collection incomplete. Valid records on that page remain visible; an observed conflicting commit still makes the receipt INVALID. The JSON receipt and summary preserve stable collection failure codes such as `PROVIDER_RESPONSE_INVALID`, `PERMISSION_DENIED` and `RATE_LIMITED`, without copying provider error messages. Duplicate provider IDs cannot establish collection completeness, and explicit suite/run associations must match their collection endpoint.
 
 ## Verify and render a saved receipt
 
@@ -68,7 +68,7 @@ Missing or malformed provider counts, commit identities, check records and artif
 node bin/trustpr.mjs --verify-receipt receipt.json --output ./new-verification-directory
 ```
 
-This validates the bounded schema, subject identity and digest, then regenerates Markdown. It verifies integrity and format, not the factual truth of supplied evidence.
+This validates the bounded schema, subject identity and digest, then regenerates Markdown. It verifies integrity and format, not the factual truth of supplied evidence. IDs and object hashes must have their declared string types. Sparse JavaScript arrays are rejected, and BOM-containing Git filenames retain their exact bytes in the summary.
 
 ## GitHub Action
 
@@ -113,7 +113,7 @@ npm test
 
 Input JSON uses `TRUSTPR_BOUNDED_INTEGER_JSON_V1`: strict UTF-8, scalar Unicode, duplicate-key rejection, safe integer numbers only, maximum 8 MiB, depth 64, and 100,000 value nodes. Fractions and exponent forms are rejected. Digest canonicalization reuses the existing renderer's bounded integer format; this does not claim support for all RFC 8785 numeric inputs.
 
-Git evidence uses SHA-1 commit/object IDs and a merge-base-to-head raw diff with rename inference disabled. The collector ignores local replacement refs, legacy graft files and commit-graph caches when reading commit ancestry. Before collecting a diff, it runs an offline Git object-integrity check with a 20-second deadline. Corrupt objects or an unsuccessful integrity check leave the diff empty and explicitly incomplete; this also applies to unrelated corrupt objects in a caller-supplied store. Paths retain their original bytes as base64. Missing objects, multiple merge bases, submodules, LFS content and inspection limits remain unknown. Diff limits are 8 MiB, 1,000 entries, 1 MiB per inspected blob and 16 MiB total inspected blob bytes. Public fetch depth is 128; shallow ancestry may leave the merge base unavailable.
+Git evidence uses SHA-1 commit/object IDs and a merge-base-to-head raw diff with rename inference disabled. The collector ignores local replacement refs, legacy graft files and commit-graph caches when reading commit ancestry. Before collecting a diff, it runs an offline Git object-integrity check with a 20-second deadline. Corrupt objects or an unsuccessful integrity check leave the diff empty and explicitly incomplete; this also applies to unrelated corrupt objects in a caller-supplied store. Paths retain their original bytes as base64. Missing objects, multiple merge bases, submodules, LFS content and inspection limits remain unknown. In shallow stores, the collector establishes that truncated ancestry cannot conceal another best common ancestor before reporting a merge base; otherwise it returns `SHALLOW_ANCESTRY_NOT_ESTABLISHED` with an empty diff. Diff limits are 8 MiB, 1,000 entries, 1 MiB per inspected blob and 16 MiB total inspected blob bytes. Public fetch depth is 128; shallow ancestry may leave the merge base unavailable.
 
 HTTP responses are bounded to 8 MiB. API reads reject redirects and cross-origin pagination, allow at most 500 requests, and have a three-minute transport deadline. Rate limits and read failures produce explicit unavailable evidence. No automatic provider retry or GitHub write occurs.
 
