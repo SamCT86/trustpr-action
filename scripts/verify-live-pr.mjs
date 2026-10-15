@@ -7,8 +7,11 @@ import {parseStrictJson} from '../src/strict-json.mjs';
 import {verifyReceipt} from '../src/receipt.mjs';
 const execute=promisify(execFile);
 const fixtures={
-  'same-repository':{repo:'openai/openai-python',pr:'4041',
-    base:'9301e319ea33ef28fba380f39a289dedc14652c1',head:'83833ea92b0da18e51e32f1d39650aeff691430f'},
+  // Controlled public first-party fixture; always check live base/head before
+  // accepting evidence. Third-party PR #4041 changed on 2026-10-14 and made
+  // unrelated TrustPR CI red (LIVE_FIXTURE_GENERATION_CHANGED).
+  'same-repository':{repo:'SamCT86/trustpr-consumer-canary',pr:'1',
+    base:'1d1b4e41a00c57ec387f692acbe8578c653a250d',head:'f445d93b798aeec3cd36d5147be3f16033d4bf48'},
   fork:{repo:'psf/requests',pr:'7586',
     base:'f361ead047be5cb873174218582f7d8b9fcd9f49',head:'9820a0c297d4c3e3f7359b617b5082f24c63c79e'}
 };
