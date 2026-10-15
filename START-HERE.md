@@ -1,6 +1,6 @@
 # TrustPR: start here
 
-**Free and open source. No signup, no payment, no terminal required.**
+**Free and open source. No separate TrustPR account, no payment, no terminal required.** You need a GitHub account and access to a repository.
 
 TrustPR reads the evidence around a GitHub pull request (PR) and makes a short report. A **PR** is a proposed change to a repository. TrustPR does **not** approve code, merge it, or tell you a change is safe.
 
