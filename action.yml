@@ -1,5 +1,8 @@
 name: TrustPR evidence receipt
 description: Read-only PR evidence receipt. No merge authorization.
+branding:
+  icon: shield
+  color: blue
 inputs:
   repository:
     description: Base repository owner/name from the pull request event
