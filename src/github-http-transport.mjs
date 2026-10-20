@@ -74,8 +74,12 @@ export function createGithubHttpRequest({token='',fetchImpl=globalThis.fetch,max
     }
     if(!response.ok) {
       await response.body?.cancel().catch(()=>{});
-      const retry=Number(response.headers.get('retry-after'));
-      const rate=response.status===429||(response.status===403&&response.headers.get('x-ratelimit-remaining')==='0');
+      const retryHeader=response.headers.get('retry-after');
+      const retry=retryHeader!==null&&/^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(retryHeader.trim())
+        ?Number(retryHeader):NaN;
+      // GitHub secondary limits may return 403 with positive primary quota and Retry-After.
+      const rate=response.status===429||(response.status===403&&(
+        response.headers.get('x-ratelimit-remaining')==='0'||(Number.isFinite(retry)&&retry>0)));
       throw failure(rate?'RATE_LIMITED':'GITHUB_HTTP_ERROR',rate?429:response.status,
         rate&&Number.isFinite(retry)&&retry>=0?{retryAfterMs:Math.min(retry*1000,3600000)}:{});
     }
