@@ -6,9 +6,9 @@ TrustPR reads the evidence around a GitHub pull request (PR) and makes a short r
 
 ## Install on a public GitHub repository
 
-**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** A specially truncated shallow Git history can make the published v0.1.0 collector report `VALID` before complete ancestry is established. `VALID` is **not** proof of complete ancestry, safe code, or permission to merge. The conservative correction exists in the **unreleased v0.1.1 source**, not in the pinned v0.1.0 workflow.
+**Why v0.1.1?** An unusual truncated shallow Git history could make v0.1.0 overstate its ancestry evidence as `VALID` ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)). The new v0.1.1 source conservatively returns `PARTIAL` and an explicit unknown instead. Neither status means safe to merge.
 
-You need permission to add a file to the repository. These instructions use the tested **v0.1.0 prerelease** of TrustPR—not the newer v0.1.1 development branch.
+You need permission to add a file to the repository. These instructions use the **v0.1.1 prerelease** of TrustPR, pinned to its exact reviewed source commit. This is not a moving version tag.
 
 **1.** On GitHub, open *your own repository*. Select **Add file → Create new file** (you may need to select the **Code** tab first).
 
@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Check PR evidence (no PR code is run)
         id: receipt
-        uses: SamCT86/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8
+        uses: SamCT86/trustpr-action@95d913eccbce6ccb547c293deaa8711272148e93
         with:
           repository: ${{ github.repository }}
           pull-request-number: ${{ github.event.pull_request.number }}
@@ -87,4 +87,4 @@ Your report also says **UNAUTHENTICATED** and **POLICY_UNBOUND**. This means it 
 
 TrustPR itself is **free, MIT-licensed, and open source**. GitHub Actions usage and limits are governed by your GitHub plan. The pinned Action requests **read-only** GitHub permissions, does not run code from the PR, and does not merge or comment on anything. Downloadable reports can contain PR metadata, so avoid publishing reports that you would not otherwise share.
 
-For the technical details, source code, limitations and command-line usage, see the main [TrustPR README](README.md). For bugs, open an issue in [trustpr-action](https://github.com/SamCT86/trustpr-action/issues). The upcoming v0.1.1 candidate is **not** claimed as publicly released here.
+For the technical details, source code, limitations and command-line usage, see the main [TrustPR README](README.md). For bugs, open an issue in [trustpr-action](https://github.com/SamCT86/trustpr-action/issues). The v0.1.1 source was tested on a maintainer-controlled GitHub-hosted consumer PR. The publication and checksum of the final release must be verified separately; this guide is updated only after that verification.
