@@ -8,7 +8,7 @@ TrustPR collects a pull request's Git changes and GitHub evidence into a JSON re
 
 **What the receipt does not prove:** an ordinary result can be **PARTIAL**; that is not a merge PASS. Receipts remain **UNAUTHENTICATED** and **POLICY_UNBOUND**. TrustPR does not execute PR tests, cryptographically attest evidence, approve changes, or authorize merging.
 
-Prefer working locally? 
+
 Run the local demo:
 
 ```bash
