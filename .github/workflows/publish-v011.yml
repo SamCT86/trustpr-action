@@ -28,7 +28,7 @@ jobs:
     env:
       SOURCE_SHA: 95d913eccbce6ccb547c293deaa8711272148e93
       EXPECTED_SHA256: 317e406d448b1d63877b6074e43605c6e8185adc7ca45dd8a68a4fdbd2e0e871
-      EXPECTED_NOTES_SHA256: 5a2662862c80cca197e1b9caf66281bd49a31f063d62c28ac7b16b8125fbded0
+      EXPECTED_NOTES_SHA256: 8143f517eed5a124adc6171cbc963794f80666f44e5e9decc2a047d47be7600c
     steps:
       - name: Checkout triggering main and preserve the reviewed release notes
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -107,7 +107,7 @@ jobs:
       TAG: v0.1.1
       SOURCE_SHA: 95d913eccbce6ccb547c293deaa8711272148e93
       EXPECTED_SHA256: 317e406d448b1d63877b6074e43605c6e8185adc7ca45dd8a68a4fdbd2e0e871
-      EXPECTED_NOTES_SHA256: 5a2662862c80cca197e1b9caf66281bd49a31f063d62c28ac7b16b8125fbded0
+      EXPECTED_NOTES_SHA256: 8143f517eed5a124adc6171cbc963794f80666f44e5e9decc2a047d47be7600c
     steps:
       - name: Download only this run's exact verified bundle
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
