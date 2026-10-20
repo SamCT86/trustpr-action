@@ -107,6 +107,19 @@ test('renderer version and implementation limits are fixed and versioned', () =>
   });
 });
 
+test('observed-only counts do not imply GitHub has no checks during incomplete collection', () => {
+  const core = baseCore();
+  core.observed.checks = [];
+  core.observed.artifacts = [];
+  core.unknowns = [{stable_code: 'GITHUB_COLLECTION_INCOMPLETE', field_or_source_tuple: 'check_runs'}];
+  core.validity.status = 'PARTIAL';
+  const out = renderTrustPrMarkdown(makeReceipt(core));
+  assert.ok(out.includes('## Observed evidence counts'));
+  assert.ok(out.includes('- checks: 0'));
+  assert.ok(out.includes('- artifacts: 0'));
+  assert.ok(out.includes('does not prove that none exist'));
+});
+
 test('summary displays schema, renderer, core digest, status, reasons, policy and authenticity', () => {
   const receipt = makeReceipt();
   const out = renderTrustPrMarkdown(receipt);
