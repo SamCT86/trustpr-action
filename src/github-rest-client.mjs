@@ -73,6 +73,12 @@ function artifactRetention(artifact) {
   return artifact.expired?'expired':'available';
 }
 
+function endpointIdentity(value, expected) {
+  const actual = providerId(value ?? expected);
+  if (actual !== String(expected)) throw Object.assign(new Error('PROVIDER_RESPONSE_INVALID'), {code:'PROVIDER_RESPONSE_INVALID'});
+  return actual;
+}
+
 function collectionPage(response, name, map, capped = false) {
   const items = [];
   let malformed = false;
@@ -141,7 +147,7 @@ export function createGithubRestClient(request) {
       return collectionPage(response, 'check_runs', (check) => ({
           provider: 'github',
           check_run_id: providerId(check.id),
-          check_suite_id: providerId(check?.check_suite?.id ?? checkSuiteId),
+          check_suite_id: endpointIdentity(check?.check_suite?.id, checkSuiteId),
           head_sha: providerHead(check),
           name: check.name,
           status: checkStatus(check.status),
@@ -176,7 +182,7 @@ export function createGithubRestClient(request) {
       return collectionPage(response, 'artifacts', (artifact) => ({
           provider: 'github',
           artifact_id: providerId(artifact.id),
-          producing_run_id: providerId(artifact?.workflow_run?.id ?? workflowRunId),
+          producing_run_id: endpointIdentity(artifact?.workflow_run?.id, workflowRunId),
           // This endpoint is run-scoped; it does not establish the producing attempt.
           attempt: null,
           retention_state: artifactRetention(artifact),

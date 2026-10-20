@@ -74,7 +74,12 @@ function canonicalize(value, depth = 0) {
     return JSON.stringify(Object.is(value, -0) ? 0 : value);
   }
   if (Array.isArray(value)) {
-    return '[' + value.map((item) => canonicalize(item, depth + 1)).join(',') + ']';
+    const items = [];
+    for (let i = 0; i < value.length; i += 1) {
+      if (!Object.hasOwn(value, i)) fail('SPARSE_CANONICAL_ARRAY');
+      items.push(canonicalize(value[i], depth + 1));
+    }
+    return '[' + items.join(',') + ']';
   }
   if (isPlainObject(value)) {
     const keys = Object.keys(value).sort();
@@ -266,8 +271,14 @@ function decodeCanonicalBase64(value) {
 function renderGitPath(rawPathB64, limits, findings, field) {
   const bytes = decodeCanonicalBase64(rawPathB64);
   try {
-    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    return safeInline(decoded, field, limits, findings);
+    const decoded = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+    const path = safeInline(decoded, field, limits, findings);
+    // A literal backslash-u filename can resemble a visible Unicode escape.
+    // Keep the original bytes explicit when the path contains a BOM character.
+    if (decoded.includes('\ufeff')) {
+      return path + ' (raw_path_b64=' + safeInline(rawPathB64, field + '.bytes', limits, findings) + ')';
+    }
+    return path;
   } catch {
     const display = `[non-UTF8 path: base64:${rawPathB64}]`;
     return safeInline(display, field, limits, findings);

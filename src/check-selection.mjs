@@ -68,6 +68,14 @@ function evaluateGroup(attempts, expectedHead) {
     if (withoutAttempt.length > 1) return { state: 'AMBIGUOUS', selected: null };
     return chooseCandidate(withoutAttempt);
   }
+  // Attempts are counters for one producing run, not an ordering of separate runs.
+  const runIds = new Set(withAttempt.map((item) => item.workflow_run_id ?? null));
+  if (runIds.size > 1 || (withAttempt.length > 1 && (
+    typeof withAttempt[0].workflow_run_id !== 'string'
+    || withAttempt[0].workflow_run_id.trim().length === 0
+  ))) {
+    return { state: 'AMBIGUOUS', selected: null };
+  }
   let max = attemptValue(withAttempt[0]);
   for (const item of withAttempt.slice(1)) {
     const value = attemptValue(item);

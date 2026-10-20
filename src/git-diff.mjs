@@ -50,11 +50,33 @@ export async function collectGitDiff({gitDirectory,baseSha,headSha}){
   try{
     await git(gitDirectory,['fsck','--no-reflogs','--no-dangling','--no-progress',baseSha,headSha]);
   }catch{result.unknowns.push(finding('GIT_OBJECT_INTEGRITY_NOT_ESTABLISHED'));return result;}
+  let provisionalMergeBase;
   try{
     const bases=(await git(gitDirectory,['merge-base','--all',baseSha,headSha])).toString('ascii').trim().split('\n');
     if(bases.length!==1||!OID.test(bases[0])){result.unknowns.push(finding('AMBIGUOUS_MERGE_BASE'));return result;}
-    result.merge_base_sha=bases[0];
+    provisionalMergeBase=bases[0];
   }catch{result.unknowns.push(finding('MERGE_BASE_UNAVAILABLE'));return result;}
+  try{
+    const shallow=(await git(gitDirectory,['rev-parse','--is-shallow-repository'])).toString('ascii').trim();
+    if(shallow!=='true'&&shallow!=='false')throw new Error('shallow');
+    if(shallow==='true'){
+      // Hidden parents below an observed ancestor of the candidate cannot add
+      // another best common ancestor. Competing truncated arms remain unknown.
+      const ancestry=(await git(gitDirectory,['rev-list','--parents',baseSha,headSha,'--'])).toString('ascii').trim();
+      let rootsChecked=0;
+      for(const line of ancestry.split('\n')){
+        if(!/^[0-9a-f]{40}(?: [0-9a-f]{40})*$/.test(line))throw new Error('ancestry');
+        if(line.length!==40)continue;
+        if(++rootsChecked>128)throw new Error('ancestry root limit');
+        const commit=await git(gitDirectory,['cat-file','commit',line],GIT_LIMITS.maxBlobBytes);
+        const headers=commit.toString('utf8').split('\n\n',1)[0];
+        if(/^parent /m.test(headers)){
+          await git(gitDirectory,['merge-base','--is-ancestor',line,provisionalMergeBase]);
+        }
+      }
+    }
+  }catch{result.unknowns.push(finding('SHALLOW_ANCESTRY_NOT_ESTABLISHED'));return result;}
+  result.merge_base_sha=provisionalMergeBase;
   try{
     const raw=await git(gitDirectory,['diff','--raw','-z','--no-renames','--no-ext-diff','--no-textconv','--abbrev=40',result.merge_base_sha,headSha,'--']);
     result.changed_entries=parseRawGitDiff(raw);
