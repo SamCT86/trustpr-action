@@ -75,6 +75,7 @@ Your report also says **UNAUTHENTICATED** and **POLICY_UNBOUND**. This means it 
 ## I don't see a report
 
 - **No workflow?** Make sure the file above is on the repository's default branch. Confirm GitHub Actions is enabled under **Settings → Actions → General**. Then open or update a PR.
+- **A fork PR is awaiting approval?** GitHub can require a maintainer to approve Actions runs from first-time or outside contributors. The maintainer must **review the PR's changed files, especially workflow edits**, before selecting **Awaiting approval → Approve workflows to run**. If you do not have write access, ask a maintainer; do not bypass this safety setting. See [GitHub's approval instructions](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks).
 - **A job is red?** Open its logs in the **Actions** tab. `INVALID` and `STALE` can intentionally fail the job. Use the receipt to investigate.
 - **No downloaded file?** Look under the completed workflow run's **Artifacts** section. The example retains reports for seven days. A failure before the receipt is generated may leave no file.
 - **Using a private repo?** This beginner workflow targets *public* repositories. Private PR Git objects may not be accessible using the credential-free default collector; see the main [README](README.md) for `git-directory` setup.
