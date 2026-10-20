@@ -84,6 +84,7 @@ jobs:
     if: >-
       needs.verify.result == 'success' &&
       github.event_name == 'workflow_dispatch' &&
+      github.repository == 'SamCT86/trustpr-action' &&
       github.actor == 'SamCT86' &&
       github.triggering_actor == 'SamCT86' &&
       github.run_attempt == 1 &&
