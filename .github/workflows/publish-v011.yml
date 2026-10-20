@@ -63,6 +63,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/release"
+          # npm pack archives mode bits; normalize only this disposable checkout.
+          # Preserve owner executable bits, but drop variable group/other umask modes.
+          chmod -R go-rwx LICENSE README.md action.yml package.json bin src
+          git diff --exit-code --quiet -- LICENSE README.md action.yml package.json bin src || { echo 'HOLD_SOURCE_MODE_DRIFT'; exit 1; }
           npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/release" --silent
           cd "$RUNNER_TEMP/release"
           file=trustpr-runtime-rebaseline-0.1.1.tgz
