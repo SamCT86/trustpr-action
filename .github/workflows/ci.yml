@@ -56,6 +56,31 @@ jobs:
                 throw new Error("INSTALLED_BIN_DEMO_INVALID");
             });
           '
+      - name: Byte-verify the approved v0.1.1 prerelease candidate on hosted Ubuntu
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha=95d913eccbce6ccb547c293deaa8711272148e93
+          expected_tarball_sha=317e406d448b1d63877b6074e43605c6e8185adc7ca45dd8a68a4fdbd2e0e871
+          expected_notes_sha=5a2662862c80cca197e1b9caf66281bd49a31f063d62c28ac7b16b8125fbded0
+          # Review release notes from main/PR checkout, independent of the pinned older product source.
+          printf '%s  %s\n' "$expected_notes_sha" .github/RELEASE_NOTES_v0.1.1.md | sha256sum --check --status
+          # Isolated exact source worktree: no checkouts of untrusted PR code run in this step.
+          source_directory="$RUNNER_TEMP/trustpr-v011-locked-source"
+          git -c core.hooksPath=/dev/null worktree add --detach "$source_directory" "$source_sha" > /dev/null
+          cd "$source_directory"
+          [[ "$(git rev-parse HEAD)" == "$source_sha" ]] || { echo 'HOLD_SOURCE_SHA'; exit 1; }
+          [[ "$(node -p "require('./package.json').version")" == '0.1.1' ]] || { echo 'HOLD_VERSION'; exit 1; }
+          [[ "$(node -p "require('./package.json').private")" == 'true' ]] || { echo 'HOLD_NPM_PRIVATE'; exit 1; }
+          chmod -R go-rwx LICENSE README.md action.yml package.json bin src
+          git diff --exit-code --quiet -- LICENSE README.md action.yml package.json bin src || { echo 'HOLD_SOURCE_MODE_DRIFT'; exit 1; }
+          mkdir -p "$RUNNER_TEMP/trustpr-v011-candidate"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/trustpr-v011-candidate" --silent
+          file="$RUNNER_TEMP/trustpr-v011-candidate/trustpr-runtime-rebaseline-0.1.1.tgz"
+          [[ -f "$file" ]] || { echo 'HOLD_PACK_MISSING'; exit 1; }
+          [[ "$(stat -c %s "$file")" == 41218 ]] || { echo 'HOLD_PACKAGE_SIZE'; exit 1; }
+          printf '%s  %s\n' "$expected_tarball_sha" "$file" | sha256sum --check --status || { echo 'HOLD_PACK_SHA_DRIFT'; exit 1; }
+          echo "HOSTED_V011_PACKAGE_SHA_MATCH $expected_tarball_sha"
   action-canary:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
