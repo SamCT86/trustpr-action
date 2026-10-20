@@ -2,6 +2,13 @@
 
 TrustPR collects a pull request's Git changes and GitHub evidence into a JSON receipt and a readable summary. It makes missing or inconsistent evidence visible before someone relies on a green check.
 
+## Start here — GitHub Action in five steps
+
+**[Install TrustPR without a terminal](START-HERE.md)** using a copy-and-paste, read-only workflow pinned to the published **v0.1.0 prerelease**. It produces a GitHub job summary and a downloadable JSON evidence receipt. No TrustPR account or payment is required; GitHub Actions usage is subject to your GitHub plan.
+
+**What the receipt does not prove:** an ordinary result can be **PARTIAL**; that is not a merge PASS. Receipts remain **UNAUTHENTICATED** and **POLICY_UNBOUND**. TrustPR does not execute PR tests, cryptographically attest evidence, approve changes, or authorize merging.
+
+
 Run the local demo:
 
 ```bash
