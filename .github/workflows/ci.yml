@@ -62,7 +62,7 @@ jobs:
           set -euo pipefail
           source_sha=95d913eccbce6ccb547c293deaa8711272148e93
           expected_tarball_sha=317e406d448b1d63877b6074e43605c6e8185adc7ca45dd8a68a4fdbd2e0e871
-          expected_notes_sha=5a2662862c80cca197e1b9caf66281bd49a31f063d62c28ac7b16b8125fbded0
+          expected_notes_sha=8143f517eed5a124adc6171cbc963794f80666f44e5e9decc2a047d47be7600c
           # Review release notes from main/PR checkout, independent of the pinned older product source.
           printf '%s  %s\n' "$expected_notes_sha" .github/RELEASE_NOTES_v0.1.1.md | sha256sum --check --status
           # Isolated exact source worktree: no checkouts of untrusted PR code run in this step.
