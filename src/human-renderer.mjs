@@ -340,7 +340,8 @@ function renderLines(receipt, limits) {
   }
   lines.push('');
 
-  lines.push('## Evidence counts');
+  lines.push('## Observed evidence counts');
+  lines.push('- Zero observed checks or artifacts does not prove that none exist when GitHub collection is incomplete.');
   lines.push(`- changed_entries: ${core.observed.changed_entries.length}`);
   lines.push(`- checks: ${core.observed.checks.length}`);
   lines.push(`- artifacts: ${core.observed.artifacts.length}`);
