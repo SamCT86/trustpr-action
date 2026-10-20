@@ -11,7 +11,8 @@ export const ARTIFACT_LIMITS = Object.freeze({
   maxRedirects: 8
 });
 
-const UTF8_FATAL = new TextDecoder('utf-8', { fatal: true });
+// Archive paths are byte identities: a leading BOM is part of the filename.
+const UTF8_FATAL = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const SHA256_RE = /^sha256:([0-9a-fA-F]{64})$/;
 const DECIMAL_RE = /^(?:0|[1-9][0-9]*)$/;
 
@@ -379,8 +380,9 @@ export function buildSafeArchiveManifest(entries) {
 
     const logicalPath = checked.trailing ? checked.path.slice(0, -1) : checked.path;
     const existingKind = seenLogicalKinds.get(logicalPath);
-    if (existingKind && existingKind !== entry.kind) {
-      return invalid('ARCHIVE_PATH_TYPE_CONFLICT');
+    if (existingKind) {
+      return invalid(existingKind !== entry.kind
+        ? 'ARCHIVE_PATH_TYPE_CONFLICT' : 'ARCHIVE_DUPLICATE_PATH');
     }
     for (const filePath of fileLogicalPaths) {
       if (logicalPath.startsWith(filePath + '/')) {

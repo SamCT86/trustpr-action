@@ -19,6 +19,8 @@ if [[ "$graft_file" != /* ]]; then graft_file="$repo/$graft_file"; fi
 if git_repo ls-files --error-unmatch RUNTIME_SOURCE_MANIFEST.json >/dev/null 2>&1; then
   hold HOLD_INTERNAL_MANIFEST_STILL_TRACKED
 fi
-history=$(git_repo log --all --format=%H -- RUNTIME_SOURCE_MANIFEST.json) || hold HOLD_HISTORY_UNREADABLE
+# Default path history simplification can prune a merged side branch whose
+# manifest was deleted before merging. Inspect every reachable parent instead.
+history=$(git_repo log --all --full-history --format=%H -- RUNTIME_SOURCE_MANIFEST.json) || hold HOLD_HISTORY_UNREADABLE
 [[ -z "$history" ]] || hold HOLD_INTERNAL_MANIFEST_IN_GIT_HISTORY
 echo PASS_NO_KNOWN_INTERNAL_MANIFEST_IN_COMPLETE_REACHABLE_HISTORY
