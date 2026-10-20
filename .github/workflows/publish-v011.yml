@@ -28,6 +28,7 @@ jobs:
     env:
       SOURCE_SHA: 95d913eccbce6ccb547c293deaa8711272148e93
       EXPECTED_SHA256: 317e406d448b1d63877b6074e43605c6e8185adc7ca45dd8a68a4fdbd2e0e871
+      EXPECTED_NOTES_SHA256: 5a2662862c80cca197e1b9caf66281bd49a31f063d62c28ac7b16b8125fbded0
     steps:
       - name: Checkout triggering main and preserve the reviewed release notes
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -40,6 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           cp .github/RELEASE_NOTES_v0.1.1.md "$RUNNER_TEMP/RELEASE_NOTES.md"
+          printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" "$RUNNER_TEMP/RELEASE_NOTES.md" | sha256sum --check --status || { echo 'HOLD_NOTES_DIGEST_DRIFT'; exit 1; }
           git checkout --detach "$SOURCE_SHA"
           [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]] || { echo 'HOLD_SOURCE_SHA'; exit 1; }
       - name: Setup Node 24
@@ -101,6 +103,7 @@ jobs:
       TAG: v0.1.1
       SOURCE_SHA: 95d913eccbce6ccb547c293deaa8711272148e93
       EXPECTED_SHA256: 317e406d448b1d63877b6074e43605c6e8185adc7ca45dd8a68a4fdbd2e0e871
+      EXPECTED_NOTES_SHA256: 5a2662862c80cca197e1b9caf66281bd49a31f063d62c28ac7b16b8125fbded0
     steps:
       - name: Download only this run's exact verified bundle
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -117,6 +120,7 @@ jobs:
           printf '%s  %s\n' "$EXPECTED_SHA256" trustpr-runtime-rebaseline-0.1.1.tgz | cmp - SHA256SUMS
           sha256sum --check --status SHA256SUMS || { echo 'HOLD_BUNDLE_SHA'; exit 1; }
           [[ "$(stat -c %s trustpr-runtime-rebaseline-0.1.1.tgz)" == 41218 ]] || { echo 'HOLD_BUNDLE_SIZE'; exit 1; }
+          printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" RELEASE_NOTES.md | sha256sum --check --status || { echo 'HOLD_NOTES_SHA'; exit 1; }
           # Explicit 404 only; authorization/network errors must not be mistaken for absence.
           if gh api "repos/$REPO/releases/tags/$TAG" >/dev/null 2>"$RUNNER_TEMP/release-lookup.err"; then
             echo 'HOLD_RELEASE_ALREADY_EXISTS'; exit 1
