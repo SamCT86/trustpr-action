@@ -6,7 +6,7 @@ TrustPR reads the evidence around a GitHub pull request (PR) and makes a short r
 
 ## Install on a public GitHub repository
 
-**Why v0.1.1?** An unusual truncated shallow Git history could make v0.1.0 overstate its ancestry evidence as `VALID` ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)). The new v0.1.1 source conservatively returns `PARTIAL` and an explicit unknown instead. Neither status means safe to merge.
+**Why v0.1.1?** In specially truncated shallow Git history, the old v0.1.0 **Git-diff collector** could incorrectly return component-local `VALID` ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)); the **overall PR receipt still returned `PARTIAL`** because test execution was unknown. The new v0.1.1 collector returns `PARTIAL / SHALLOW_ANCESTRY_NOT_ESTABLISHED` for that adversarial case. Neither result means safe to merge.
 
 You need permission to add a file to the repository. These instructions use the **v0.1.1 prerelease** of TrustPR, pinned to its exact reviewed source commit. This is not a moving version tag.
 
