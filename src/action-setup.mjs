@@ -1,5 +1,3 @@
-import crypto from 'node:crypto';
-
 export const ACTION_SETUP_VERSION = 'TRUSTPR-ACTION-SETUP-V1';
 export const TRUSTPR_ACTION_REPOSITORY = 'SamCT86/trustpr-action';
 export const ACTION_SETUP_PERMISSIONS = Object.freeze({
@@ -11,10 +9,6 @@ export const ACTION_SETUP_PERMISSIONS = Object.freeze({
 
 const ACTION_REPOSITORY_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9](?:[A-Za-z0-9._-]{0,99})$/;
 const ACTION_COMMIT_SHA_RE = /^[0-9a-f]{40}$/;
-const INTEGRATION_STATES = new Set([
-  'BLOCKED_SOURCE_BYTES_UNAVAILABLE'
-]);
-
 function isPlainObject(value) {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const proto = Object.getPrototypeOf(value);
@@ -121,44 +115,4 @@ export function renderTrustPrActionWorkflowYaml(input) {
     '          head-sha: ${{ github.event.pull_request.head.sha }}',
     ''
   ].join('\n');
-}
-
-export function buildLane2ActionHandoff(input = {}) {
-  const { actionRepository, actionCommitSha } = validateActionIdentity(
-    input,
-    ['actionRepository', 'actionCommitSha', 'integrationState'],
-    'ACTION_HANDOFF_INPUT_INVALID'
-  );
-  if (typeof input.integrationState !== 'string' || !INTEGRATION_STATES.has(input.integrationState)) {
-    fail('INTEGRATION_STATE_INVALID');
-  }
-  const workflow = renderTrustPrActionWorkflowYaml({ actionRepository, actionCommitSha });
-  return {
-    schema: 'TRUSTPR_ACTION_LANE2_HANDOFF_V1',
-    action_setup_version: ACTION_SETUP_VERSION,
-    github_write_owner: 'MIKE_LANE_2',
-    github_effect_performed: false,
-    provider_effect_performed: false,
-    external_service_account_required: false,
-    github_app_required: false,
-    repository_secrets_required: false,
-    write_token_required: false,
-    action_reference: actionRepository + '@' + actionCommitSha,
-    action_reference_state: 'CALLER_SUPPLIED_MUST_BE_REVERIFIED_BEFORE_PUBLICATION',
-    workflow_sha256: crypto.createHash('sha256').update(workflow).digest('hex'),
-    full_receipt_integration: input.integrationState,
-    full_v1_done: false,
-    required_lane2_actions: [
-      'Create/publish the authorized TrustPR action repository and implementation under Lane2 GitHub write ownership.',
-      'Resolve the actual action repository and full immutable commit SHA; regenerate this workflow from the reviewed generator.',
-      'Re-run syntax/security verification on the exact regenerated workflow before GitHub publication.',
-      'Run a fork/Dependabot canary with read-only token and no secrets before broader rollout.'
-    ],
-    non_claims: [
-      'NOT_GITHUB_PUBLISHED',
-      'NOT_DEPLOYED',
-      'NOT_FULL_RECEIPT_INTEGRATED',
-      'NOT_FULL_TRUSTPR_V1_DONE'
-    ]
-  };
 }
