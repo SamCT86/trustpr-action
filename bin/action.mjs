@@ -22,12 +22,14 @@ export function renderActionStepSummary(receipt,canonicalMarkdown){
   };
   if(!Object.hasOwn(explanations,status))fail('ACTION_SUMMARY_STATUS_INVALID');
   const {changed_entries,checks}=receipt.core.observed;
+  const files=changed_entries.length+' changed '+(changed_entries.length===1?'file':'files');
+  const checksObserved=checks.length+' GitHub '+(checks.length===1?'check record':'check records');
   return [
     '# TrustPR — your PR at a glance',
     '',
     '**Result: '+status+'.** '+explanations[status],
     '',
-    '**What was recorded:** '+changed_entries.length+' changed file entries and '+checks.length+' GitHub check records. Collections may be incomplete; counts are not test results.',
+    '**What was recorded:** '+files+' and '+checksObserved+'. Some evidence may be missing; these counts are not test results.',
     '',
     '**What is not proven:** That tests ran, that the code is safe, or that anyone approved a merge. GitHub checks can include TrustPR itself.',
     '',
