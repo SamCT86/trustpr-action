@@ -22,7 +22,7 @@ If you think you've found a security issue, don't post exploitable details or se
 
 ## For code contributors
 
-## Make one bounded change
+### Make one bounded change
 
 1. Use a new branch. State the user-facing failure or improvement and what would falsify your hypothesis.
 2. Preserve the default **read-only** permissions (contents, pull-requests, actions and checks), `pull_request` event binding, and complete **40-character immutable Action pin**. Do not introduce `pull_request_target`, PR-controlled shell execution, arbitrary network destinations, implicit write scopes, or credential persistence.
@@ -30,7 +30,7 @@ If you think you've found a security issue, don't post exploitable details or se
 4. Add one focused positive case and one negative/error case for a behavior change. Where meaningful, show that the negative case fails on the original source and passes after the fix.
 5. Open a PR with exact files changed, why, tests, limitations and expected user effect. This project does not require an external persona or standing review committee; repository protections and actual contributor permissions still apply.
 
-## Test locally and on GitHub
+### Test locally and on GitHub
 
 Use Linux with Node.js **24 or newer** and Git available at `/usr/bin/git`. The package has no npm dependencies:
 
@@ -43,6 +43,6 @@ The test suite covers deterministic receipts, read-only GitHub transport, immuta
 
 Do not alter the published `v0.1.0` or `v0.1.1` commit pins, immutable release assets, or their verified package digests. New source improvements require a separately versioned future release, hosted validation, a deliberate release gate and rollback planning. Do not use an unreviewed PR to publish a GitHub release or list the Action on Marketplace.
 
-## What makes a helpful report?
+### What makes a helpful report?
 
 The most valuable report says **exactly what happened**: public run URL if safe to share, exact commit pin, reproducible input, receipt status plus unknown codes, the incorrect conclusion you feared, and one measurable improvement. Failure reports and critical feedback are as welcome as successful installations; stars and opinions are not substitutes for functioning consumer runs.
