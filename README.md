@@ -6,7 +6,7 @@ TrustPR collects a pull request's Git changes and GitHub evidence into a JSON re
 
 **[Install TrustPR without a terminal](START-HERE.md)** using a copy-and-paste, read-only workflow pinned to the published **v0.1.0 prerelease**. It produces a GitHub job summary and a downloadable JSON evidence receipt. No TrustPR account or payment is required; GitHub Actions usage is subject to your GitHub plan.
 
-**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** A specially truncated shallow Git history can make the published v0.1.0 collector report `VALID` before complete ancestry is established. `VALID` is **not** proof of complete ancestry, safe code, or permission to merge. The conservative correction exists in the **unreleased v0.1.1 source**, not in the pinned v0.1.0 workflow.
+**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** With a specially truncated shallow history, the published v0.1.0 **Git-diff collector** could label ancestry evidence `VALID` before proving it complete. This is the **component's status, not the overall Action receipt status**: the v0.1.0 receipt remains `PARTIAL` because test execution is unestablished. Neither status proves complete ancestry, safe code or permission to merge. The conservative Git-diff fix exists in **unreleased v0.1.1 source**, not the published v0.1.0 pin.
 
 **What the receipt does not prove:** an ordinary result can be **PARTIAL**; that is not a merge PASS. Receipts remain **UNAUTHENTICATED** and **POLICY_UNBOUND**. TrustPR does not execute PR tests, cryptographically attest evidence, approve changes, or authorize merging.
 

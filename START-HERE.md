@@ -6,7 +6,7 @@ TrustPR reads the evidence around a GitHub pull request (PR) and makes a short r
 
 ## Install on a public GitHub repository
 
-**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** A specially truncated shallow Git history can make the published v0.1.0 collector report `VALID` before complete ancestry is established. `VALID` is **not** proof of complete ancestry, safe code, or permission to merge. The conservative correction exists in the **unreleased v0.1.1 source**, not in the pinned v0.1.0 workflow.
+**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** On specially truncated shallow history, the v0.1.0 **Git-diff collector** could incorrectly label ancestry `VALID`. That is the **internal diff status, not the overall receipt**: ordinary v0.1.0 Action receipts remain `PARTIAL` because test execution is not established. Neither status means safe to merge. The conservative Git-diff correction exists only in **unreleased v0.1.1 source**.
 
 You need permission to add a file to the repository. These instructions use the tested **v0.1.0 prerelease** of TrustPR—not the newer v0.1.1 development branch.
 
