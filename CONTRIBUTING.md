@@ -2,7 +2,7 @@
 
 **You don't need to write code to help.** If you tried TrustPR and something was confusing, tell us. A short report is more valuable than a guess about what might help.
 
-### Just tried TrustPR?
+## Just tried TrustPR?
 
 1. [Use the five-step setup guide](START-HERE.md) on a **public** GitHub repository.
 2. Open a pull request and look at **Actions → TrustPR receipt → Summary**.
@@ -12,7 +12,7 @@ You can share a **public** GitHub run URL if you want, but please **never share 
 
 **What does PARTIAL mean?** TrustPR found some evidence but couldn't establish everything. This is normal; `PARTIAL` is **not a pass**, and green GitHub jobs are not proof your tests ran. TrustPR itself is free, MIT-licensed and read-only.
 
-### Found a bug or want to contribute code?
+## Found a bug or want to contribute code?
 
 [Open an issue](https://github.com/SamCT86/trustpr-action/issues/new) with a short description: what you expected, what happened, and (if possible) one safe way to reproduce it. Check [existing issues](https://github.com/SamCT86/trustpr-action/issues) before starting the same fix. A small, focused pull request is welcome.
 
