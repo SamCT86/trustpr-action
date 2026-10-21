@@ -1,5 +1,28 @@
 # A real TrustPR run — what PARTIAL actually means
 
+## First run of the five-step workflow (actual GitHub-hosted consumer)
+
+The most realistic beginner fixture is **[consumer PR #6](https://github.com/SamCT86/trustpr-consumer-canary/pull/6)**. Its [GitHub Actions run 39475939069](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069) completed successfully on 20 October 2026. It used the **full immutable v0.1.1 source SHA** `95d913eccbce6ccb547c293deaa8711272148e93` for the TrustPR Action with read-only permissions. **That SHA is a source candidate, not a v0.1.1 release.** The five-step installation guide still pins the separately published v0.1.0 prerelease.
+
+GitHub uploaded [artifact `trustpr-6-39475939069-1`](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069) (ID `12288803366`, original ZIP SHA-256 `523c5464a7135afe0b09a53add1e6c3ad5f3857cd3a5364ce03652fe8bc03bbf`). The original downloaded `receipt.json` says:
+
+| What was recorded | Original receipt or live provider check |
+| --- | --- |
+| Evidence status | `PARTIAL` — not a merge pass |
+| Authenticity and policy | `UNAUTHENTICATED` / `POLICY_UNBOUND` |
+| Git change observed | One file: `.github/workflows/trustpr.yml` |
+| GitHub checks in receipt | **1 observed check**, `check_run_id=118811794878`, `in_progress` at collection |
+| What that check actually was | GitHub's **TrustPR collector job itself**, job ID `118811794878` in the same workflow run; it later completed successfully |
+| Independently established test execution | **None**. `TEST_EXECUTION_NOT_ESTABLISHED` remains an explicit unknown |
+| Producing attempt for the observed check | Unknown: `CHECK_ATTEMPT_NOT_ESTABLISHED` |
+| Receipt integrity value | Core digest `485ef4d3edbfd058a00080833de47e24c286df5a9b733c97c41339b916108c26` (SHA-256, **not** an authenticated signature) |
+
+**Why does the report list a check if no tests were proved?** GitHub exposes checks for Actions jobs, including the job currently collecting TrustPR evidence. **A check count is not a test count.** The collector's later green job means evidence collection did not fail; it does not retroactively make its in-progress snapshot a completed test or turn `PARTIAL` into review approval.
+
+This is a **maintainer-controlled, first-party** consumer repository. The PR was closed without merging. It is **not** evidence of an independent installation, external feedback or verified test execution. Artifact downloads are subject to GitHub retention; the [Actions run and job page](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069) retain the public provenance. An actionable readability improvement is tracked separately in [issue #37](https://github.com/SamCT86/trustpr-action/issues/37); no fix is claimed as shipped.
+
+---
+
 This is a **public first-party canary**, not evidence of independent user adoption. It shows what TrustPR reported when a pull request modified a GitHub workflow, without executing the PR's code.
 
 - [Consumer pull request #5](https://github.com/SamCT86/trustpr-consumer-canary/pull/5) (closed without merge)
