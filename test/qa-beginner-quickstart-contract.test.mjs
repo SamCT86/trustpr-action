@@ -1,5 +1,5 @@
 // Lane2: fail closed if the public no-terminal recipe drifts from released
-// GitHub Action v0.1.0 inputs, outputs or read-only permissions.
+// GitHub Action v0.1.1 inputs, outputs or read-only permissions.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -15,7 +15,7 @@ function assertSafeBeginnerWorkflow(yaml){
  assert.doesNotMatch(yaml,/^ {4}permissions:/m,'no job-level permissions override');
  assert.match(yaml,/^ {4}runs-on: ubuntu-latest$/m);
  assert.match(yaml,/^ {4}timeout-minutes: 10$/m);
- assert.match(yaml,/^ {8}uses: SamCT86\/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8$/m);
+ assert.match(yaml,/^ {8}uses: SamCT86\/trustpr-action@95d913eccbce6ccb547c293deaa8711272148e93$/m);
  assert.match(yaml,/^ {8}uses: actions\/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f$/m);
 }
 
@@ -32,7 +32,7 @@ test('published beginner guide gives one usable PR workflow with no shell or wri
  assert.doesNotMatch(yaml,/^\s*(?:run|shell|pull_request_target|workflow_run):/m);
  assert.equal((yaml.match(/\buses: /g)||[]).length,2,'Action + uploader only');
  assertSafeBeginnerWorkflow(yaml);
- assert.ok(yaml.includes('SamCT86/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8'),
+ assert.ok(yaml.includes('SamCT86/trustpr-action@95d913eccbce6ccb547c293deaa8711272148e93'),
   'pinned public prerelease SHA required');
  assert.ok(yaml.includes('actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f'),
   'pinned official uploader required');
@@ -58,7 +58,7 @@ test('beginner workflow guard rejects unsafe substitutions and extra executable 
   ['workflow permissions escalation',yaml.replace('  contents: read\n','  contents: write\n')],
   ['self-hosted runner',yaml.replace('runs-on: ubuntu-latest','runs-on: self-hosted')],
   ['unbounded timeout',yaml.replace('timeout-minutes: 10','timeout-minutes: 360')],
-  ['substituted Action',yaml.replace('SamCT86/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8','attacker/action@3ac08375bed6380285fcfd8019cef0cb7931dda8')],
+  ['substituted Action',yaml.replace('SamCT86/trustpr-action@95d913eccbce6ccb547c293deaa8711272148e93','attacker/action@95d913eccbce6ccb547c293deaa8711272148e93')],
   ['unpinned uploader',yaml.replace('actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f','actions/upload-artifact@v4')],
   ['wrong trigger',yaml.replace('  pull_request:','  workflow_run:')]
  ];
