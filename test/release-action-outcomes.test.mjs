@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {runAction} from '../bin/action.mjs';
+import {runAction,renderActionStepSummary} from '../bin/action.mjs';
 import {verifyReceipt} from '../src/receipt.mjs';
+import {renderTrustPrMarkdown} from '../src/human-renderer.mjs';
 import {gitFixture} from './runtime-helper.mjs';
 
 async function actionFixture(t, status, fork=false) {
@@ -43,6 +44,12 @@ for(const status of ['INVALID','STALE']) test(`Action ${status} fails after writ
   assert.match(summary,new RegExp(status));
   assert.match(summary,/UNAUTHENTICATED/);
   assert.match(summary,/POLICY_UNBOUND/);
+  assert.match(summary,/^# TrustPR — your PR at a glance\n/);
+  assert.match(summary,/GitHub checks can include TrustPR itself\./);
+  assert.match(summary,/<summary>Technical evidence and recorded unknowns<\/summary>/);
+  assert.match(summary,/# TrustPR evidence receipt/);
+  assert.equal(await fs.readFile(outputs['summary-path'],'utf8'),renderTrustPrMarkdown(receipt),
+    'immutable downloaded V1 summary remains byte-exact');
   await assert.rejects(fs.stat(path.join(x.f.dir,'executed-pr-code')),{code:'ENOENT'});
 });
 
@@ -55,6 +62,11 @@ for(const fork of [false,true]) test(`Action coherent ${fork?'fork':'same-repo'}
   assert.equal(receipt.core.validity.status,'PARTIAL');
   assert.ok(receipt.core.unknowns.some(x=>x.stable_code==='TEST_EXECUTION_NOT_ESTABLISHED'));
   assert.equal(verifyReceipt(receipt).merge_authorized,false);
+  const jobSummary=await fs.readFile(x.env.GITHUB_STEP_SUMMARY,'utf8');
+  assert.match(jobSummary,/\*\*Result: PARTIAL\.\*\*/);
+  assert.match(jobSummary,/counts are not test results/);
+  assert.match(jobSummary,/never authorizes merging/);
+  assert.equal(await fs.readFile(outputs['summary-path'],'utf8'),renderTrustPrMarkdown(receipt));
   await assert.rejects(fs.stat(path.join(x.f.dir,'executed-pr-code')),{code:'ENOENT'});
 });
 
@@ -79,4 +91,23 @@ test('Action rejects malformed Git directory input before any provider request',
     await assert.rejects(runAction({client,env:x.env}),e=>e.code==='ACTION_GIT_DIRECTORY_INVALID');
   }
   assert.equal(calls,0);
+});
+
+test('at-a-glance text reports check records but never upgrades them to test proof',()=>{
+  const receipt={core:{validity:{status:'PARTIAL'},observed:{changed_entries:[{}],checks:[{}]}}};
+  const result=renderActionStepSummary(receipt,'# canonical receipt\n');
+  assert.match(result,/1 changed file entries and 1 GitHub check records/);
+  assert.match(result,/GitHub checks can include TrustPR itself/);
+  assert.match(result,/tests ran/);
+  assert.doesNotMatch(result,/1 tests passed|all tests passed/);
+  assert.match(result,/\n# canonical receipt\n/);
+  for(const status of ['VALID','STALE','INVALID']){
+    receipt.core.validity.status=status;
+    const message=renderActionStepSummary(receipt,'# canonical receipt\n');
+    assert.match(message,new RegExp('\\*\\*Result: '+status+'\\.'));
+    assert.match(message,/never authorizes merging/);
+  }
+  receipt.core.validity.status='APPROVED';
+  assert.throws(()=>renderActionStepSummary(receipt,'# canonical receipt\n'),
+    error=>error.code==='ACTION_SUMMARY_STATUS_INVALID');
 });
