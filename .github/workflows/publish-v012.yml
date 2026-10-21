@@ -1,0 +1,166 @@
+# DO NOT DISPATCH until: (1) source SHA is merged by non-squash onto main,
+# (2) real GitHub-hosted read-only consumer canary at that SHA is verified,
+# (3) exact tarball and notes digests are checked, (4) owner confirms scoped token.
+# This workflow is an owner-only manual release candidate. No auto-publish on merge.
+# Manually dispatched owner-only prerelease. Merely merging this file never publishes.
+# Package verification runs with read-only scope; write scope exists only in publish.
+name: TrustPR v0.1.2 manual prerelease
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type publish-v0.1.2 to release the fixed reviewed source'
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: trustpr-prerelease-v0.1.2
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'SamCT86/trustpr-action' &&
+      github.actor == 'SamCT86' &&
+      github.triggering_actor == 'SamCT86' &&
+      github.run_attempt == 1 &&
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm == 'publish-v0.1.2'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SOURCE_SHA: 7ee27751ea5568623d03a1359ef29811cf45607c
+      EXPECTED_SHA256: 8cd95532beae7d2419fc0827d327fa3dee511ef9c3e53e0348a8b5b117f26305
+      EXPECTED_NOTES_SHA256: 3429ec896c8fad30bc5e093959c37ad14a3aabd30afa3d512c7e08cdb301d115
+    steps:
+      - name: Checkout triggering main and preserve the reviewed release notes
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Switch to exact product commit (notes stay outside checkout)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/RELEASE_NOTES_v0.1.2.md "$RUNNER_TEMP/RELEASE_NOTES.md"
+          printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" "$RUNNER_TEMP/RELEASE_NOTES.md" | sha256sum --check --status || { echo 'HOLD_NOTES_DIGEST_DRIFT'; exit 1; }
+          # Keep the reviewed source commit reachable from triggering main.
+          # A PR squash merge changes commit identity and must NOT satisfy this gate.
+          git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA" || { echo 'HOLD_SOURCE_NOT_IN_MAIN_HISTORY'; exit 1; }
+          git checkout --detach "$SOURCE_SHA"
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]] || { echo 'HOLD_SOURCE_SHA'; exit 1; }
+      - name: Setup Node 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Re-test the immutable source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(node -p "require('./package.json').version")" == '0.1.1' ]] || { echo 'HOLD_PACKAGE_VERSION'; exit 1; }
+          [[ "$(node -p "require('./package.json').private")" == 'true' ]] || { echo 'HOLD_NPM_PRIVATE'; exit 1; }
+          npm test
+          npm run test:release
+          bash scripts/check-public-history.sh .
+      - name: Pack and bind exact expected bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release"
+          # npm pack archives mode bits; normalize only this disposable checkout.
+          # Preserve owner executable bits, but drop variable group/other umask modes.
+          chmod -R go-rwx LICENSE README.md action.yml package.json bin src
+          git diff --exit-code --quiet -- LICENSE README.md action.yml package.json bin src || { echo 'HOLD_SOURCE_MODE_DRIFT'; exit 1; }
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/release" --silent
+          cd "$RUNNER_TEMP/release"
+          file=trustpr-runtime-rebaseline-0.1.1.tgz
+          [[ -f "$file" && "$(find . -maxdepth 1 -name '*.tgz' | wc -l)" == 1 ]] || { echo 'HOLD_PACKAGE_INVENTORY'; exit 1; }
+          printf '%s  %s\n' "$EXPECTED_SHA256" "$file" > SHA256SUMS
+          sha256sum --check --status SHA256SUMS || { echo 'HOLD_TARBALL_DIGEST_DRIFT'; exit 1; }
+          [[ "$(stat -c %s "$file")" == 42391 ]] || { echo 'HOLD_TARBALL_SIZE_DRIFT'; exit 1; }
+          cp "$RUNNER_TEMP/RELEASE_NOTES.md" ./RELEASE_NOTES.md
+      - name: Transfer only verified package bytes and notes, no build scripts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: trustpr-release-v012-staged
+          path: |
+            ${{ runner.temp }}/release/trustpr-runtime-rebaseline-0.1.1.tgz
+            ${{ runner.temp }}/release/SHA256SUMS
+            ${{ runner.temp }}/release/RELEASE_NOTES.md
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: verify
+    if: >-
+      needs.verify.result == 'success' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.repository == 'SamCT86/trustpr-action' &&
+      github.actor == 'SamCT86' &&
+      github.triggering_actor == 'SamCT86' &&
+      github.run_attempt == 1 &&
+      github.ref == 'refs/heads/main' &&
+      inputs.confirm == 'publish-v0.1.2'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.TRUSTPR_RELEASE_TOKEN }}
+      REPO: SamCT86/trustpr-action
+      TAG: v0.1.2
+      SOURCE_SHA: 7ee27751ea5568623d03a1359ef29811cf45607c
+      EXPECTED_SHA256: 8cd95532beae7d2419fc0827d327fa3dee511ef9c3e53e0348a8b5b117f26305
+      EXPECTED_NOTES_SHA256: 3429ec896c8fad30bc5e093959c37ad14a3aabd30afa3d512c7e08cdb301d115
+    steps:
+      - name: Download only this run's exact verified bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: trustpr-release-v012-staged
+          path: ${{ runner.temp }}/release
+      - name: Read-only final admission before any publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/release"
+          [[ -n "${GH_TOKEN:-}" ]] || { echo 'HOLD_SCOPED_RELEASE_TOKEN_UNAVAILABLE'; exit 1; }
+          [[ "$(find . -maxdepth 1 -type f | wc -l)" == 3 ]] || { echo 'HOLD_BUNDLE_INVENTORY'; exit 1; }
+          [[ -s RELEASE_NOTES.md && -f SHA256SUMS && -f trustpr-runtime-rebaseline-0.1.1.tgz ]] || { echo 'HOLD_BUNDLE_MISSING'; exit 1; }
+          printf '%s  %s\n' "$EXPECTED_SHA256" trustpr-runtime-rebaseline-0.1.1.tgz | cmp - SHA256SUMS
+          sha256sum --check --status SHA256SUMS || { echo 'HOLD_BUNDLE_SHA'; exit 1; }
+          [[ "$(stat -c %s trustpr-runtime-rebaseline-0.1.1.tgz)" == 42391 ]] || { echo 'HOLD_BUNDLE_SIZE'; exit 1; }
+          printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" RELEASE_NOTES.md | sha256sum --check --status || { echo 'HOLD_NOTES_SHA'; exit 1; }
+          # Explicit 404 only; authorization/network errors must not be mistaken for absence.
+          if gh api "repos/$REPO/releases/tags/$TAG" >/dev/null 2>"$RUNNER_TEMP/release-lookup.err"; then
+            echo 'HOLD_RELEASE_ALREADY_EXISTS'; exit 1
+          fi
+          grep -Fq 'HTTP 404' "$RUNNER_TEMP/release-lookup.err" || { echo 'HOLD_RELEASE_LOOKUP_UNCERTAIN'; exit 1; }
+          tag_refs="$(git ls-remote --tags "https://github.com/$REPO.git" "refs/tags/$TAG" "refs/tags/$TAG^{}")"
+          [[ -z "$tag_refs" ]] || { echo 'HOLD_TAG_ALREADY_EXISTS'; exit 1; }
+      - name: Publish prerelease (single non-retried operation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/release"
+          gh release create "$TAG" trustpr-runtime-rebaseline-0.1.1.tgz SHA256SUMS \
+            --repo "$REPO" --target "$SOURCE_SHA" \
+            --title 'TrustPR v0.1.2 (prerelease)' \
+            --notes-file RELEASE_NOTES.md --prerelease --latest=false
+      - name: Provider readback of exact immutable source and downloadable asset bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_target="$(git ls-remote --tags "https://github.com/$REPO.git" "refs/tags/$TAG" | awk '{print $1}')"
+          [[ "$tag_target" == "$SOURCE_SHA" ]] || { echo 'HOLD_REMOTE_TAG_SOURCE_MISMATCH'; exit 1; }
+          gh release view "$TAG" --repo "$REPO" --json isDraft,isPrerelease,url \
+            --jq 'if .isDraft == false and .isPrerelease == true then .url else error("HOLD_REMOTE_RELEASE_STATE") end'
+          mkdir -p "$RUNNER_TEMP/downloaded"
+          gh release download "$TAG" --repo "$REPO" --dir "$RUNNER_TEMP/downloaded"
+          cd "$RUNNER_TEMP/downloaded"
+          [[ "$(find . -maxdepth 1 -type f | wc -l)" == 2 ]] || { echo 'HOLD_REMOTE_ASSET_INVENTORY'; exit 1; }
+          cmp SHA256SUMS "$RUNNER_TEMP/release/SHA256SUMS"
+          sha256sum --check --status SHA256SUMS || { echo 'HOLD_REMOTE_ASSET_SHA'; exit 1; }
+          cmp trustpr-runtime-rebaseline-0.1.1.tgz "$RUNNER_TEMP/release/trustpr-runtime-rebaseline-0.1.1.tgz"
