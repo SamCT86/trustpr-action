@@ -1,14 +1,26 @@
-# Contributing to TrustPR
+# Help make TrustPR clearer
 
-TrustPR is a free, MIT-licensed, read-only GitHub Action that records observable Git changes and available GitHub pull-request evidence. It is **not** a test runner, authenticated attestation, security verdict, or permission to merge. Small, evidence-backed improvements are welcome.
+**You don't need to write code to help.** If you tried TrustPR and something was confusing, tell us. A short report is more valuable than a guess about what might help.
 
-## Start with an actual problem
+### Just tried TrustPR?
 
-- Trying the Action for the first time? Use the [five-step public-repository guide](START-HERE.md), then share a **non-sensitive** first-run result or the failed step in [issue #11](https://github.com/SamCT86/trustpr-action/issues/11).
-- Found a reproducible bug? Open a focused [issue](https://github.com/SamCT86/trustpr-action/issues/new) with the exact TrustPR version or immutable commit SHA, relevant receipt status/unknown codes, expected versus observed behavior, and minimal sanitized reproduction.
-- Before changing code, check [existing issues and PRs](https://github.com/SamCT86/trustpr-action/issues) to avoid duplicating a fix. A reported error is not, by itself, evidence that users have adopted the Action.
+1. [Use the five-step setup guide](START-HERE.md) on a **public** GitHub repository.
+2. Open a pull request and look at **Actions → TrustPR receipt → Summary**.
+3. [Tell us what worked or where you got stuck](https://github.com/SamCT86/trustpr-action/issues/11). One or two sentences are enough.
 
-**Never post credentials, private repository URLs, confidential pull-request content, full private receipts, or personal data.** If a finding involves secrets or exploitable details, do not publish those details in a public issue. Contact the maintainer through an available private GitHub vulnerability-reporting channel if one is shown; if none is offered, ask publicly for a private reporting route **without describing the vulnerability**.
+You can share a **public** GitHub run URL if you want, but please **never share passwords, access tokens, private receipt contents or personal data**.
+
+**What does PARTIAL mean?** TrustPR found some evidence but couldn't establish everything. This is normal; `PARTIAL` is **not a pass**, and green GitHub jobs are not proof your tests ran. TrustPR itself is free, MIT-licensed and read-only.
+
+### Found a bug or want to contribute code?
+
+[Open an issue](https://github.com/SamCT86/trustpr-action/issues/new) with a short description: what you expected, what happened, and (if possible) one safe way to reproduce it. Check [existing issues](https://github.com/SamCT86/trustpr-action/issues) before starting the same fix. A small, focused pull request is welcome.
+
+If you think you've found a security issue, don't post exploitable details or secrets publicly. Use a private GitHub vulnerability-reporting channel if available; otherwise ask the maintainer for a private reporting route **without describing the vulnerability**.
+
+---
+
+## For code contributors
 
 ## Make one bounded change
 
@@ -29,7 +41,7 @@ npm run test:release
 
 The test suite covers deterministic receipts, read-only GitHub transport, immutable subjects, negative inputs, and simulated Action behavior. A local PASS is **not** hosted PASS. The repository's GitHub CI performs a fresh source test and pinned public pull-request fixtures. For runtime or setup changes, verify a real read-only GitHub-hosted consumer PR and inspect its receipt/summary; first-party canaries are not independent adoption.
 
-Do not alter the published `v0.1.0` SHA, a frozen prerelease source SHA, or its verified package digest. New source improvements require a separately versioned future release, hosted validation, a deliberate release gate and rollback planning. Do not use an unreviewed PR to publish a GitHub release or list the Action on Marketplace.
+Do not alter the published `v0.1.0` or `v0.1.1` commit pins, immutable release assets, or their verified package digests. New source improvements require a separately versioned future release, hosted validation, a deliberate release gate and rollback planning. Do not use an unreviewed PR to publish a GitHub release or list the Action on Marketplace.
 
 ## What makes a helpful report?
 
