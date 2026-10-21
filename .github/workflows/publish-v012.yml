@@ -60,7 +60,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$(node -p "require('./package.json').version")" == '0.1.1' ]] || { echo 'HOLD_PACKAGE_VERSION'; exit 1; }
+          [[ "$(node -p "require('./package.json').version")" == '0.1.2' ]] || { echo 'HOLD_PACKAGE_VERSION'; exit 1; }
           [[ "$(node -p "require('./package.json').private")" == 'true' ]] || { echo 'HOLD_NPM_PRIVATE'; exit 1; }
           npm test
           npm run test:release
@@ -76,7 +76,7 @@ jobs:
           git diff --exit-code --quiet -- LICENSE README.md action.yml package.json bin src || { echo 'HOLD_SOURCE_MODE_DRIFT'; exit 1; }
           npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/release" --silent
           cd "$RUNNER_TEMP/release"
-          file=trustpr-runtime-rebaseline-0.1.1.tgz
+          file=trustpr-runtime-rebaseline-0.1.2.tgz
           [[ -f "$file" && "$(find . -maxdepth 1 -name '*.tgz' | wc -l)" == 1 ]] || { echo 'HOLD_PACKAGE_INVENTORY'; exit 1; }
           printf '%s  %s\n' "$EXPECTED_SHA256" "$file" > SHA256SUMS
           sha256sum --check --status SHA256SUMS || { echo 'HOLD_TARBALL_DIGEST_DRIFT'; exit 1; }
@@ -87,7 +87,7 @@ jobs:
         with:
           name: trustpr-release-v012-staged
           path: |
-            ${{ runner.temp }}/release/trustpr-runtime-rebaseline-0.1.1.tgz
+            ${{ runner.temp }}/release/trustpr-runtime-rebaseline-0.1.2.tgz
             ${{ runner.temp }}/release/SHA256SUMS
             ${{ runner.temp }}/release/RELEASE_NOTES.md
           if-no-files-found: error
@@ -128,10 +128,10 @@ jobs:
           cd "$RUNNER_TEMP/release"
           [[ -n "${GH_TOKEN:-}" ]] || { echo 'HOLD_SCOPED_RELEASE_TOKEN_UNAVAILABLE'; exit 1; }
           [[ "$(find . -maxdepth 1 -type f | wc -l)" == 3 ]] || { echo 'HOLD_BUNDLE_INVENTORY'; exit 1; }
-          [[ -s RELEASE_NOTES.md && -f SHA256SUMS && -f trustpr-runtime-rebaseline-0.1.1.tgz ]] || { echo 'HOLD_BUNDLE_MISSING'; exit 1; }
-          printf '%s  %s\n' "$EXPECTED_SHA256" trustpr-runtime-rebaseline-0.1.1.tgz | cmp - SHA256SUMS
+          [[ -s RELEASE_NOTES.md && -f SHA256SUMS && -f trustpr-runtime-rebaseline-0.1.2.tgz ]] || { echo 'HOLD_BUNDLE_MISSING'; exit 1; }
+          printf '%s  %s\n' "$EXPECTED_SHA256" trustpr-runtime-rebaseline-0.1.2.tgz | cmp - SHA256SUMS
           sha256sum --check --status SHA256SUMS || { echo 'HOLD_BUNDLE_SHA'; exit 1; }
-          [[ "$(stat -c %s trustpr-runtime-rebaseline-0.1.1.tgz)" == 42391 ]] || { echo 'HOLD_BUNDLE_SIZE'; exit 1; }
+          [[ "$(stat -c %s trustpr-runtime-rebaseline-0.1.2.tgz)" == 42391 ]] || { echo 'HOLD_BUNDLE_SIZE'; exit 1; }
           printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" RELEASE_NOTES.md | sha256sum --check --status || { echo 'HOLD_NOTES_SHA'; exit 1; }
           # Explicit 404 only; authorization/network errors must not be mistaken for absence.
           if gh api "repos/$REPO/releases/tags/$TAG" >/dev/null 2>"$RUNNER_TEMP/release-lookup.err"; then
@@ -145,7 +145,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/release"
-          gh release create "$TAG" trustpr-runtime-rebaseline-0.1.1.tgz SHA256SUMS \
+          gh release create "$TAG" trustpr-runtime-rebaseline-0.1.2.tgz SHA256SUMS \
             --repo "$REPO" --target "$SOURCE_SHA" \
             --title 'TrustPR v0.1.2 (prerelease)' \
             --notes-file RELEASE_NOTES.md --prerelease --latest=false
@@ -163,4 +163,4 @@ jobs:
           [[ "$(find . -maxdepth 1 -type f | wc -l)" == 2 ]] || { echo 'HOLD_REMOTE_ASSET_INVENTORY'; exit 1; }
           cmp SHA256SUMS "$RUNNER_TEMP/release/SHA256SUMS"
           sha256sum --check --status SHA256SUMS || { echo 'HOLD_REMOTE_ASSET_SHA'; exit 1; }
-          cmp trustpr-runtime-rebaseline-0.1.1.tgz "$RUNNER_TEMP/release/trustpr-runtime-rebaseline-0.1.1.tgz"
+          cmp trustpr-runtime-rebaseline-0.1.2.tgz "$RUNNER_TEMP/release/trustpr-runtime-rebaseline-0.1.2.tgz"
