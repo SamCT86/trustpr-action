@@ -1,15 +1,22 @@
 # TrustPR
 
-TrustPR collects a pull request's Git changes and GitHub evidence into a JSON receipt and a readable summary. It makes missing or inconsistent evidence visible before someone relies on a green check.
+**Know what a pull request shows — and what it doesn't.**
 
-## Start here — GitHub Action in five steps
+TrustPR reads a GitHub pull request (a proposed code change) and creates a short report in GitHub Actions. You can see **what changed**, **what GitHub reported**, and **what's still unknown**.
 
-**[Install TrustPR without a terminal](START-HERE.md)** using a copy-and-paste, read-only workflow pinned to the published **v0.1.1 prerelease**. It produces a GitHub job summary and a downloadable JSON evidence receipt. No TrustPR account or payment is required; GitHub Actions usage is subject to your GitHub plan.
+### [Add TrustPR to your public repository — five steps, no terminal →](START-HERE.md)
 
-**Why upgrade from v0.1.0?** In specially truncated shallow Git history, the v0.1.0 **Git-diff collector** could incorrectly report component-local `VALID` ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)), even though the overall Action receipt remained `PARTIAL` with unknown test execution. The v0.1.1 Git-diff collector conservatively returns `PARTIAL / SHALLOW_ANCESTRY_NOT_ESTABLISHED`. Neither result proves safe code, test execution or permission to merge.
+- **One file to copy.** No TrustPR account or payment. The tool is free and MIT-licensed; GitHub Actions usage depends on your GitHub plan.
+- **Read-only.** TrustPR does not run PR code, write to your repository, leave comments, or merge anything.
+- **No false green lights.** Expect a `PARTIAL` receipt when evidence is missing. Even a green GitHub job does **not** prove tests ran or say a change is safe to merge.
 
-**What the receipt does not prove:** an ordinary result can be **PARTIAL**; that is not a merge PASS. Receipts remain **UNAUTHENTICATED** and **POLICY_UNBOUND**. TrustPR does not execute PR tests, cryptographically attest evidence, approve changes, or authorize merging.
+**[See an actual first-party report](REAL-PUBLIC-EXAMPLE.md)** · **[Get help](https://github.com/SamCT86/trustpr-action/issues)** · **[v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1)**
 
+The public, copy-and-paste setup is the simplest supported path. Private repositories require extra Git setup; see [advanced setup](#github-action). The example is from a maintainer-controlled repository, not an independent user's endorsement.
+
+---
+
+## For developers: CLI and technical details
 
 Run the local demo:
 
