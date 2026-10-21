@@ -96,8 +96,14 @@ test('Action rejects malformed Git directory input before any provider request',
 test('at-a-glance text reports check records but never upgrades them to test proof',()=>{
   const receipt={core:{validity:{status:'PARTIAL'},observed:{changed_entries:[{}],checks:[{}]}}};
   const result=renderActionStepSummary(receipt,'# canonical receipt\n');
-  assert.match(result,/1 changed file entries and 1 GitHub check records/);
+  assert.match(result,/1 changed file and 1 GitHub check record/);
   assert.match(result,/GitHub checks can include TrustPR itself/);
+  receipt.core.observed.changed_entries.push({});
+  receipt.core.observed.checks.length=0;
+  const other=renderActionStepSummary(receipt,'# canonical receipt\n');
+  assert.match(other,/2 changed files and 0 GitHub check records/);
+  receipt.core.observed.changed_entries.pop();
+  receipt.core.observed.checks.push({});
   assert.match(result,/tests ran/);
   assert.doesNotMatch(result,/1 tests passed|all tests passed/);
   assert.match(result,/\n# canonical receipt\n/);
