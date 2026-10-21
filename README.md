@@ -1,15 +1,22 @@
 # TrustPR
 
-TrustPR collects a pull request's Git changes and GitHub evidence into a JSON receipt and a readable summary. It makes missing or inconsistent evidence visible before someone relies on a green check.
+**Know what a pull request shows — and what it doesn't.**
 
-## Start here — GitHub Action in five steps
+TrustPR reads a GitHub pull request (a proposed code change) and creates a short report in GitHub Actions. You can see **what changed**, **what GitHub reported**, and **what's still unknown**.
 
-**[Install TrustPR without a terminal](START-HERE.md)** using a copy-and-paste, read-only workflow pinned to the published **v0.1.0 prerelease**. It produces a GitHub job summary and a downloadable JSON evidence receipt. No TrustPR account or payment is required; GitHub Actions usage is subject to your GitHub plan.
+### [Add TrustPR to your public repository — five steps, no terminal →](START-HERE.md)
 
-**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** With a specially truncated shallow history, the published v0.1.0 **Git-diff collector** could label ancestry evidence `VALID` before proving it complete. This is the **component's status, not the overall Action receipt status**: the v0.1.0 receipt remains `PARTIAL` because test execution is unestablished. Neither status proves complete ancestry, safe code or permission to merge. The conservative Git-diff fix exists in **unreleased v0.1.1 source**, not the published v0.1.0 pin.
+- **One file to copy.** No TrustPR account or payment. The tool is free and MIT-licensed; GitHub Actions usage depends on your GitHub plan.
+- **Read-only.** TrustPR does not run PR code, write to your repository, leave comments, or merge anything.
+- **No false green lights.** Expect a `PARTIAL` receipt when evidence is missing. Even a green GitHub job does **not** prove tests ran or say a change is safe to merge.
 
-**What the receipt does not prove:** an ordinary result can be **PARTIAL**; that is not a merge PASS. Receipts remain **UNAUTHENTICATED** and **POLICY_UNBOUND**. TrustPR does not execute PR tests, cryptographically attest evidence, approve changes, or authorize merging.
+**[See an actual first-party report](REAL-PUBLIC-EXAMPLE.md)** · **[Get help](https://github.com/SamCT86/trustpr-action/issues)** · **[v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1)**
 
+The public, copy-and-paste setup is the simplest supported path. Private repositories require extra Git setup; see [advanced setup](#github-action). The example is from a maintainer-controlled repository, not an independent user's endorsement.
+
+---
+
+## For developers: CLI and technical details
 
 Run the local demo:
 
@@ -27,16 +34,16 @@ Node.js 24 or later and Git at `/usr/bin/git` on Linux. No npm dependencies are 
 
 ## Install the verified prerelease
 
-The [v0.1.0 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.0) includes a dependency-free tarball and `SHA256SUMS`. Download both assets into one directory, then run:
+The [v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1) includes a dependency-free tarball and `SHA256SUMS`. Download both assets into one directory, then run:
 
 ```bash
 sha256sum -c SHA256SUMS
-npm install --offline --ignore-scripts --no-audit --no-fund ./trustpr-runtime-rebaseline-0.1.0.tgz
+npm install --offline --ignore-scripts --no-audit --no-fund ./trustpr-runtime-rebaseline-0.1.1.tgz
 ./node_modules/.bin/trustpr --help
 ./node_modules/.bin/trustpr --repo OWNER/REPO --pr NUMBER --output ./new-receipt-directory
 ```
 
-The release source is pinned to `3ac08375bed6380285fcfd8019cef0cb7931dda8`. See the release notes for its exact package checksum, hosted verification and evidence limits.
+The release source is pinned to `95d913eccbce6ccb547c293deaa8711272148e93`. See the release notes for its exact package checksum, hosted verification and evidence limits.
 
 ## Collect a real public pull request
 
@@ -83,7 +90,7 @@ This validates the bounded schema, subject identity and digest, then regenerates
 
 `action.yml` and `bin/action.mjs` implement the same runtime. The Action accepts only the `pull_request` event and binds repository, pull request number, base SHA and head SHA to that event before reading provider evidence. `pull_request_target` is rejected.
 
-Save this as `.github/workflows/trustpr.yml` in a public consumer repository. The full commit pin identifies the verified v0.1.0 Action:
+Save this as `.github/workflows/trustpr.yml` in a public consumer repository. The full commit pin identifies the verified v0.1.1 Action:
 
 ```yaml
 name: TrustPR evidence receipt
@@ -100,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: SamCT86/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8
+      - uses: SamCT86/trustpr-action@95d913eccbce6ccb547c293deaa8711272148e93
         with:
           repository: ${{ github.repository }}
           pull-request-number: ${{ github.event.pull_request.number }}
@@ -132,7 +139,7 @@ Optional artifact-byte and pinned offline attestation modules are retained and t
 
 The read-only GitHub CI workflow runs the runtime tests, the installed npm executable and a source-repository Action canary bound to an actual pull request event. It also collects pinned public same-repository/fork PR fixtures, compares paths to GitHub, and verifies receipt/summary byte roundtrips. Each CI result applies to its exact tested commit.
 
-The v0.1.0 Action pin above passed real public consumer [same-repository](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/38158633148) and [Dependabot](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/38158695560) PR events with read-only permissions. Saved artifact bytes, event subjects, changed paths and rendered summaries were independently verified. The Dependabot run is not a fork Action event; the public CLI fork fixture is separate evidence. These results apply to that immutable Action pin. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
+The **previous** v0.1.0 Action pin passed real public consumer [same-repository](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/38158633148) and [Dependabot](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/38158695560) PR events with read-only permissions. Saved artifact bytes, event subjects, changed paths and rendered summaries were independently verified. The Dependabot run is not a fork Action event; the public CLI fork fixture is separate evidence. These historical results apply to the old immutable v0.1.0 pin, **not** the new v0.1.1 installation pin. The exact v0.1.1 source was exercised in first-party hosted [PR #5 run 39410380329](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39410380329). More importantly, the **exact five-step beginner workflow** (including the immutable official artifact uploader) ran successfully on first-party [consumer PR #6, run 39475939069](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069), generating a downloadable `PARTIAL / UNAUTHENTICATED / POLICY_UNBOUND` report. That QA pull request was closed without merging. External adoption and v0.1.1 Dependabot consumer verification remain unverified. Ordinary receipts stay PARTIAL, UNAUTHENTICATED and POLICY_UNBOUND; no merge authorization is granted.
 
 The manual `publication-preflight.yml` workflow checks the MIT text, exact distribution files and complete reachable Git history. It never publishes or approves a release. You can run the same checks locally with `npm test`, `npm run test:release`, and `bash scripts/check-public-history.sh .`. Neither gate proves copyright ownership, publication permission or that hosted CI passed. The project owner separately approved publication and supplied the copyright-holder name.
 

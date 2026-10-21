@@ -1,14 +1,14 @@
-# TrustPR: start here
+# TrustPR — start in five steps
 
-**Free and open source. No separate TrustPR account, no payment, no terminal required.** You need a GitHub account and access to a repository.
+**One file to copy. No terminal. No TrustPR account or payment.**
 
-TrustPR reads the evidence around a GitHub pull request (PR) and makes a short report. A **PR** is a proposed change to a repository. TrustPR does **not** approve code, merge it, or tell you a change is safe.
+TrustPR adds a readable report to a GitHub pull request (PR — a proposed code change). It shows **what changed**, **what GitHub reported**, and **what couldn't be confirmed**.
 
-## Install on a public GitHub repository
+It doesn't run the PR's code, approve changes, or merge anything. A green GitHub check does **not** mean the code is safe.
 
-**Known v0.1.0 Git-ancestry limitation ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)):** On specially truncated shallow history, the v0.1.0 **Git-diff collector** could incorrectly label ancestry `VALID`. That is the **internal diff status, not the overall receipt**: ordinary v0.1.0 Action receipts remain `PARTIAL` because test execution is not established. Neither status means safe to merge. The conservative Git-diff correction exists only in **unreleased v0.1.1 source**.
+**Before you start:** You need a **public** GitHub repository where you can add a workflow file. TrustPR is free; GitHub Actions usage follows your GitHub plan.
 
-You need permission to add a file to the repository. These instructions use the tested **v0.1.0 prerelease** of TrustPR—not the newer v0.1.1 development branch.
+## Add TrustPR to your repository
 
 **1.** On GitHub, open *your own repository*. Select **Add file → Create new file** (you may need to select the **Code** tab first).
 
@@ -38,7 +38,7 @@ jobs:
     steps:
       - name: Check PR evidence (no PR code is run)
         id: receipt
-        uses: SamCT86/trustpr-action@3ac08375bed6380285fcfd8019cef0cb7931dda8
+        uses: SamCT86/trustpr-action@95d913eccbce6ccb547c293deaa8711272148e93
         with:
           repository: ${{ github.repository }}
           pull-request-number: ${{ github.event.pull_request.number }}
@@ -59,20 +59,22 @@ jobs:
 
 **4.** Select **Commit changes** to save this workflow to your repository's **default branch** (usually `main`). If GitHub requires a PR for protected branches, propose the file change and merge it through your normal review process.
 
-**5.** Open a *new* pull request in your repository (or push another commit to an existing one). Go to **Actions → TrustPR receipt** and open the matching run. Read the **job summary**. Under **Artifacts**, download the `trustpr-...` report if available.
+**5.** Open a new pull request, or push a commit to an existing one. In your repository, go to **Actions → TrustPR receipt** and open the matching run. Read the **Summary**. To keep a copy, find **Artifacts** and download the `trustpr-...` report, if available.
 
-That's it. TrustPR runs on new or updated PRs. You don't need to install Node.js, run commands, or give TrustPR a separate token.
+**You're done.** TrustPR now runs when a pull request is opened or updated. You don't install Node.js or supply a separate token.
 
-## What do the results mean?
+## Read your report
 
-| Result | Plain-English meaning |
+| Result | What it means |
 | --- | --- |
-| **PARTIAL** | Expected for ordinary PRs: some evidence cannot be confirmed. **This is not a pass or permission to merge.** |
-| **INVALID** | The expected PR identity or evidence structure disagrees. Investigate before relying on the receipt. |
-| **STALE** | The PR changed while it was being checked. Run it again on the latest commit. |
-| **VALID** | The collected evidence is internally consistent for its stated scope. **It does not prove the code is safe.** |
+| **PARTIAL** | We could check some evidence, but not everything. **This is normal. It is not a pass.** |
+| **INVALID** | The PR identity or evidence doesn't line up. Investigate before relying on this report. |
+| **STALE** | The PR changed while we were checking. Start a new run for the **latest PR commit**, not the old one. |
+| **VALID** | Available evidence is internally consistent for the limited scope checked. **Not proof the code is safe.** |
 
-Your report also says **UNAUTHENTICATED** and **POLICY_UNBOUND**. This means it is **not** a cryptographically signed audit certificate and does **not** apply your team's approval policy. Do not use the report as an automatic merge gate.
+**Why can the GitHub job be green when the report says PARTIAL?** Green means TrustPR finished collecting a report without a fatal error. It doesn't prove tests ran or authorize a merge. A listed GitHub check may even be TrustPR's own job.
+
+Two more labels explain the limits: **UNAUTHENTICATED** means the receipt is not cryptographically signed. **POLICY_UNBOUND** means it doesn't apply your team's review or approval rules.
 
 ## I don't see a report
 
@@ -87,4 +89,8 @@ Your report also says **UNAUTHENTICATED** and **POLICY_UNBOUND**. This means it 
 
 TrustPR itself is **free, MIT-licensed, and open source**. GitHub Actions usage and limits are governed by your GitHub plan. The pinned Action requests **read-only** GitHub permissions, does not run code from the PR, and does not merge or comment on anything. Downloadable reports can contain PR metadata, so avoid publishing reports that you would not otherwise share.
 
-For the technical details, source code, limitations and command-line usage, see the main [TrustPR README](README.md). For bugs, open an issue in [trustpr-action](https://github.com/SamCT86/trustpr-action/issues). The upcoming v0.1.1 candidate is **not** claimed as publicly released here.
+**Why v0.1.1?** The older v0.1.0 Git-diff collector could overstate *component-level* certainty with specially truncated Git history ([issue #21](https://github.com/SamCT86/trustpr-action/issues/21)). v0.1.1 reports incomplete ancestry conservatively. Neither version proves test execution or safe code.
+
+**Want to see a real result first?** Read this [maintainer-run public PR example](REAL-PUBLIC-EXAMPLE.md). It is not an independent user testimonial.
+
+For technical details, see the [README](README.md). For help, [open a GitHub issue](https://github.com/SamCT86/trustpr-action/issues). The [v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1) was published on 21 October 2026 and its tag and package digest were verified. The example installation was tested in a maintainer-controlled GitHub-hosted repository; independent adoption is not yet established.
