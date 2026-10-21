@@ -1,0 +1,56 @@
+# Read-only, first-party, branch-scoped package evidence for the next Action release.
+# Does NOT publish a tag/release or make this Action available to consumers.
+name: TrustPR v0.1.2 candidate package QA
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  pack:
+    if: >-
+      github.repository == 'SamCT86/trustpr-action' &&
+      github.actor == 'SamCT86' &&
+      github.event.pull_request.head.repo.full_name == 'SamCT86/trustpr-action' &&
+      github.event.pull_request.head.ref == 'henry/v012-human-summary-source-20261021' &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate source without credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Node 24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Validate and pack exact source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "${{ github.event.pull_request.head.sha }}" ]] || exit 1
+          [[ "$(node -p "require('./package.json').version")" == 0.1.2 ]] || exit 1
+          [[ "$(node -p "require('./package.json').private")" == true ]] || exit 1
+          npm test
+          npm run test:release
+          bash scripts/check-public-history.sh .
+          chmod -R go-rwx LICENSE README.md action.yml package.json bin src
+          git diff --exit-code --quiet -- LICENSE README.md action.yml package.json bin src
+          mkdir -p "$RUNNER_TEMP/stage"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/stage" --silent
+          file="$RUNNER_TEMP/stage/trustpr-runtime-rebaseline-0.1.2.tgz"
+          [[ -f "$file" && "$(find "$RUNNER_TEMP/stage" -name '*.tgz' | wc -l)" == 1 ]] || exit 1
+          echo "CANDIDATE_SOURCE_SHA=$(git rev-parse HEAD)"
+          sha256sum "$file"
+          stat -c 'CANDIDATE_BYTES=%s' "$file"
+      - name: Preserve the precise candidate for byte readback
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: trustpr-v012-source-candidate
+          path: ${{ runner.temp }}/stage/trustpr-runtime-rebaseline-0.1.2.tgz
+          retention-days: 7
+          if-no-files-found: error
