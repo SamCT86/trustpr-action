@@ -99,10 +99,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
-      contents: write
+      contents: read
       actions: read
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.TRUSTPR_RELEASE_TOKEN }}
       REPO: SamCT86/trustpr-action
       TAG: v0.1.1
       SOURCE_SHA: 95d913eccbce6ccb547c293deaa8711272148e93
