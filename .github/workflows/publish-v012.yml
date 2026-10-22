@@ -30,9 +30,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
-      SOURCE_SHA: 7ee27751ea5568623d03a1359ef29811cf45607c
-      EXPECTED_SHA256: 8cd95532beae7d2419fc0827d327fa3dee511ef9c3e53e0348a8b5b117f26305
-      EXPECTED_NOTES_SHA256: 3429ec896c8fad30bc5e093959c37ad14a3aabd30afa3d512c7e08cdb301d115
+      SOURCE_SHA: a37fa88a23e41139d6fed796827a1ebf4a9a5321
+      EXPECTED_SHA256: 5cfbc9bd704cf2ad44518cbd804883715b22a3ab5576e6d0ebaece8a0f1de06e
+      EXPECTED_NOTES_SHA256: e907ad6e75179d60bda83b46c13e08096bf6672f99034a1441f7191f2ea17026
     steps:
       - name: Checkout triggering main and preserve the reviewed release notes
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -80,7 +80,7 @@ jobs:
           [[ -f "$file" && "$(find . -maxdepth 1 -name '*.tgz' | wc -l)" == 1 ]] || { echo 'HOLD_PACKAGE_INVENTORY'; exit 1; }
           printf '%s  %s\n' "$EXPECTED_SHA256" "$file" > SHA256SUMS
           sha256sum --check --status SHA256SUMS || { echo 'HOLD_TARBALL_DIGEST_DRIFT'; exit 1; }
-          [[ "$(stat -c %s "$file")" == 42391 ]] || { echo 'HOLD_TARBALL_SIZE_DRIFT'; exit 1; }
+          [[ "$(stat -c %s "$file")" == 42398 ]] || { echo 'HOLD_TARBALL_SIZE_DRIFT'; exit 1; }
           cp "$RUNNER_TEMP/RELEASE_NOTES.md" ./RELEASE_NOTES.md
       - name: Transfer only verified package bytes and notes, no build scripts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -112,9 +112,9 @@ jobs:
       GH_TOKEN: ${{ secrets.TRUSTPR_RELEASE_TOKEN }}
       REPO: SamCT86/trustpr-action
       TAG: v0.1.2
-      SOURCE_SHA: 7ee27751ea5568623d03a1359ef29811cf45607c
-      EXPECTED_SHA256: 8cd95532beae7d2419fc0827d327fa3dee511ef9c3e53e0348a8b5b117f26305
-      EXPECTED_NOTES_SHA256: 3429ec896c8fad30bc5e093959c37ad14a3aabd30afa3d512c7e08cdb301d115
+      SOURCE_SHA: a37fa88a23e41139d6fed796827a1ebf4a9a5321
+      EXPECTED_SHA256: 5cfbc9bd704cf2ad44518cbd804883715b22a3ab5576e6d0ebaece8a0f1de06e
+      EXPECTED_NOTES_SHA256: e907ad6e75179d60bda83b46c13e08096bf6672f99034a1441f7191f2ea17026
     steps:
       - name: Download only this run's exact verified bundle
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -131,7 +131,7 @@ jobs:
           [[ -s RELEASE_NOTES.md && -f SHA256SUMS && -f trustpr-runtime-rebaseline-0.1.2.tgz ]] || { echo 'HOLD_BUNDLE_MISSING'; exit 1; }
           printf '%s  %s\n' "$EXPECTED_SHA256" trustpr-runtime-rebaseline-0.1.2.tgz | cmp - SHA256SUMS
           sha256sum --check --status SHA256SUMS || { echo 'HOLD_BUNDLE_SHA'; exit 1; }
-          [[ "$(stat -c %s trustpr-runtime-rebaseline-0.1.2.tgz)" == 42391 ]] || { echo 'HOLD_BUNDLE_SIZE'; exit 1; }
+          [[ "$(stat -c %s trustpr-runtime-rebaseline-0.1.2.tgz)" == 42398 ]] || { echo 'HOLD_BUNDLE_SIZE'; exit 1; }
           printf '%s  %s\n' "$EXPECTED_NOTES_SHA256" RELEASE_NOTES.md | sha256sum --check --status || { echo 'HOLD_NOTES_SHA'; exit 1; }
           # Explicit 404 only; authorization/network errors must not be mistaken for absence.
           if gh api "repos/$REPO/releases/tags/$TAG" >/dev/null 2>"$RUNNER_TEMP/release-lookup.err"; then
