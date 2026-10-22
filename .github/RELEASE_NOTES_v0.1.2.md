@@ -12,7 +12,9 @@ The downloadable `receipt.json`, `summary.md`, V1 Markdown rendering, digest and
 
 ## Source and installation
 
-The planned immutable v0.1.2 source is `7ee27751ea5568623d03a1359ef29811cf45607c`. Once the release tag, attached tarball and checksums are publicly verified, advanced users can explicitly pin that full SHA; the five-step install guide continues to pin the previously released v0.1.1 until it is updated separately. There is no moving tag silently substituted.
+The planned immutable v0.1.2 source is `a37fa88a23e41139d6fed796827a1ebf4a9a5321`. Once the release tag, attached tarball and checksums are publicly verified, advanced users can explicitly pin that full SHA; the five-step install guide continues to pin the previously released v0.1.1 until it is updated separately. There is no moving tag silently substituted.
+
+The v0.1.2 package's README now links directly to the public five-step guide and first-party example, even when those pages are not bundled inside the package. A package-only reader no longer encounters dead relative links.
 
 This note does not itself prove that v0.1.2 has been published or independently adopted. Do not change your installation based on this draft alone.
 
