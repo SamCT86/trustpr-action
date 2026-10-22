@@ -2,7 +2,7 @@
 
 ## First run of the five-step workflow (actual GitHub-hosted consumer)
 
-The most realistic beginner fixture is **[consumer PR #6](https://github.com/SamCT86/trustpr-consumer-canary/pull/6)**. Its [GitHub Actions run 39475939069](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069) completed successfully on 20 October 2026. It used the **full immutable v0.1.1 source SHA** `95d913eccbce6ccb547c293deaa8711272148e93` for the TrustPR Action with read-only permissions. **That SHA is a source candidate, not a v0.1.1 release.** The five-step installation guide still pins the separately published v0.1.0 prerelease.
+The most realistic beginner fixture is **[consumer PR #6](https://github.com/SamCT86/trustpr-consumer-canary/pull/6)**. Its [GitHub Actions run 39475939069](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069) completed successfully on 20 October 2026. It used the **full immutable v0.1.1 source SHA** `95d913eccbce6ccb547c293deaa8711272148e93` for the TrustPR Action with read-only permissions. **This SHA is now the exact source of the published v0.1.1 prerelease (21 October 2026).** The five-step installation guide also pins that same immutable source.
 
 GitHub uploaded [artifact `trustpr-6-39475939069-1`](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39475939069) (ID `12288803366`, original ZIP SHA-256 `523c5464a7135afe0b09a53add1e6c3ad5f3857cd3a5364ce03652fe8bc03bbf`). The original downloaded `receipt.json` says:
 
@@ -27,7 +27,7 @@ This is a **public first-party canary**, not evidence of independent user adopti
 
 - [Consumer pull request #5](https://github.com/SamCT86/trustpr-consumer-canary/pull/5) (closed without merge)
 - [GitHub-hosted run #39410380329](https://github.com/SamCT86/trustpr-consumer-canary/actions/runs/39410380329) — `completed / success`, 2026-10-20
-- TrustPR source SHA used: `95d913eccbce6ccb547c293deaa8711272148e93` (**v0.1.1 source candidate**, not the published v0.1.0 release pin)
+- TrustPR source SHA used: `95d913eccbce6ccb547c293deaa8711272148e93` (**published v0.1.1 prerelease source**, exact immutable pin)
 - Pull request subject: repository ID `1414582128`, PR `5`, base `1d1b4e41a00c57ec387f692acbe8578c653a250d`, head `0814bcd763187f8dee4bcf11ff2b3121ad156ef6`
 
 ## What appeared in the verifier's log
@@ -61,4 +61,4 @@ A successful Action run means **the evidence collection completed without a fata
 
 ## Try it yourself
 
-Follow the [five-step beginner guide](START-HERE.md), which currently pins the **published v0.1.0 prerelease** by its full immutable commit SHA. The v0.1.1 source shown above is **not** silently substituted for that published version. If anything is confusing, post a non-sensitive experience report on [feedback issue #11](https://github.com/SamCT86/trustpr-action/issues/11); do not publish tokens, confidential PR data or private receipts.
+Follow the [five-step beginner guide](START-HERE.md), which currently pins the **published v0.1.1 prerelease** by its exact immutable source commit SHA. This is the same source used in the first-party hosted example above. If anything is confusing, post a non-sensitive experience report on [feedback issue #11](https://github.com/SamCT86/trustpr-action/issues/11); do not publish tokens, confidential PR data or private receipts.
