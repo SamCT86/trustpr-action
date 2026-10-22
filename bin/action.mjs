@@ -22,14 +22,15 @@ export function renderActionStepSummary(receipt,canonicalMarkdown){
   };
   if(!Object.hasOwn(explanations,status))fail('ACTION_SUMMARY_STATUS_INVALID');
   const {changed_entries,checks}=receipt.core.observed;
-  const files=changed_entries.length+' changed '+(changed_entries.length===1?'file':'files');
-  const checksObserved=checks.length+' GitHub '+(checks.length===1?'check record':'check records');
+  // Counts are observations, not complete totals when a provider read is incomplete.
+  const files=changed_entries.length+' changed '+(changed_entries.length===1?'file':'files')+' observed';
+  const checksObserved=checks.length+' GitHub '+(checks.length===1?'check record':'check records')+' observed';
   return [
     '# TrustPR — your PR at a glance',
     '',
     '**Result: '+status+'.** '+explanations[status],
     '',
-    '**What was recorded:** '+files+' and '+checksObserved+'. Some evidence may be missing; these counts are not test results.',
+    '**What was recorded:** '+files+' and '+checksObserved+'. These are observations, not completeness claims or test results.',
     '',
     '**What is not proven:** That tests ran, that the code is safe, or that anyone approved a merge. GitHub checks can include TrustPR itself.',
     '',
