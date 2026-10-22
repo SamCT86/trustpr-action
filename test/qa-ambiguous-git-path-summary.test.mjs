@@ -26,7 +26,9 @@ for(const [label,gitPath,warn] of [
   ['Hangul jungseong filler','README\u1160.md',true],
   ['zero-width joiner','README\u200d.md',true],
   ['BOM','README\ufeff.md',true],
-  ['combining grapheme joiner','README\u034f.md',true]
+  ['combining grapheme joiner','README\u034f.md',true],
+  ['Unicode line separator','README\u2028.md',true],
+  ['Unicode paragraph separator','README\u2029.md',true]
 ]){
   test('Action filename caution: '+label,()=>{
     const receipt=make(gitPath),before=structuredClone(receipt.core);
