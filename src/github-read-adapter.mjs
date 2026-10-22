@@ -263,7 +263,13 @@ async function readSnapshot(client, target) {
   try {
     return { kind: 'ok', snapshot: normalizeSnapshot(raw) };
   } catch (error) {
-    return { kind: 'invalid', failure_code: error?.code === 'HEAD_REPOSITORY_UNAVAILABLE'
+    // A missing fork is the specific cause only if the provider subject still
+    // matches the requested PR. Never obscure an event/repository mismatch.
+    const expectedSubjectMatches = raw?.pull_request_number === String(target.prNumber)
+      && (target.repositoryId == null || raw.repository_id === String(target.repositoryId))
+      && (target.expectedBaseSha == null || raw.base_commit_sha === target.expectedBaseSha)
+      && (target.expectedHeadSha == null || raw.head_commit_sha === target.expectedHeadSha);
+    return { kind: 'invalid', failure_code: error?.code === 'HEAD_REPOSITORY_UNAVAILABLE' && expectedSubjectMatches
       ? 'HEAD_REPOSITORY_UNAVAILABLE' : 'PROVIDER_IDENTITY_SCHEMA_INVALID' };
   }
 }
