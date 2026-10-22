@@ -34,7 +34,7 @@ export function renderActionStepSummary(receipt,canonicalMarkdown){
     if(typeof entry?.raw_path_b64!=='string')continue;
     try{
       const decoded=decoder.decode(Buffer.from(entry.raw_path_b64,'base64'));
-      if(/\p{Default_Ignorable_Code_Point}/u.test(decoded))ambiguousPaths++;
+      if(/[\u2028\u2029]/u.test(decoded) || /\p{Default_Ignorable_Code_Point}/u.test(decoded))ambiguousPaths++;
     }catch{
       // Non-UTF8 paths remain shown as raw base64 in canonical summary.md.
     }
