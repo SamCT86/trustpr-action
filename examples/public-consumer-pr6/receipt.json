@@ -1,0 +1,71 @@
+{
+  "receipt_schema_version": "trustpr-receipt-v1",
+  "authenticity": "UNAUTHENTICATED",
+  "integrity": {
+    "algorithm": "sha256",
+    "core_digest": "485ef4d3edbfd058a00080833de47e24c286df5a9b733c97c41339b916108c26"
+  },
+  "core": {
+    "subject": {
+      "repository_id": "1414582128",
+      "pull_request_number": "6",
+      "base_commit_sha": "1d1b4e41a00c57ec387f692acbe8578c653a250d",
+      "head_commit_sha": "b4a85b7c352d924b57d4ad0ddd9bc0db11c23d5b",
+      "merge_base_sha": "1d1b4e41a00c57ec387f692acbe8578c653a250d"
+    },
+    "snapshot_identity": "43fb1a24ac3487b0485a28572527887aa7dc884d4f16715c3db8dd2f996ba846",
+    "declared": {
+      "policy_binding": "POLICY_UNBOUND",
+      "required_evidence": [
+        "git_diff",
+        "github_metadata"
+      ],
+      "evidence_source": "GITHUB_READONLY",
+      "runtime_version": "TRUSTPR_RUNTIME_REBASELINE_20261007_V1"
+    },
+    "observed": {
+      "changed_entries": [
+        {
+          "raw_path_b64": "LmdpdGh1Yi93b3JrZmxvd3MvdHJ1c3Rwci55bWw=",
+          "change_type": "MODIFY",
+          "old_mode": "100644",
+          "new_mode": "100644",
+          "old_blob_sha": "5f5f2368281f35b082e4e5f623b6c22722918da5",
+          "new_blob_sha": "5be3a1583a8f03d1f56757e0413fb534f780a585"
+        }
+      ],
+      "checks": [
+        {
+          "provider": "github",
+          "check_run_id": "118811794878",
+          "head_sha": "b4a85b7c352d924b57d4ad0ddd9bc0db11c23d5b",
+          "status": "in_progress",
+          "conclusion": null,
+          "verification_state": "PROVIDER_ASSERTED",
+          "check_suite_id": "106977795841",
+          "workflow_run_id": "39475939069"
+        }
+      ],
+      "artifacts": []
+    },
+    "unknowns": [
+      {
+        "stable_code": "CHECK_ATTEMPT_NOT_ESTABLISHED",
+        "field_or_source_tuple": "[\"github\",\"118811794878\"]"
+      },
+      {
+        "stable_code": "TEST_EXECUTION_NOT_ESTABLISHED",
+        "field_or_source_tuple": "checks"
+      }
+    ],
+    "inferred": [],
+    "validity": {
+      "status": "PARTIAL",
+      "reasons": [
+        {
+          "code": "COLLECTION_INCOMPLETE"
+        }
+      ]
+    }
+  }
+}
