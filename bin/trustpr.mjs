@@ -92,5 +92,9 @@ export async function main(args=process.argv.slice(2)){
   }
   const result=await writeResult(receipt,opts['--output'],token);process.stdout.write(result.json);
 }
-if(process.argv[1]&&(await fs.realpath(path.resolve(process.argv[1])).catch(()=>null))===fileURLToPath(import.meta.url))
+// Compare canonical paths on both sides: symlink-preserving Node entry URLs
+// can differ from the real path reported by process.argv[1].
+const entryPath=process.argv[1] ? await fs.realpath(path.resolve(process.argv[1])).catch(()=>null) : null;
+const modulePath=await fs.realpath(fileURLToPath(import.meta.url)).catch(()=>null);
+if(entryPath!==null&&modulePath!==null&&entryPath===modulePath)
   main().catch(error=>{const code=/^[A-Z][A-Z0-9_]{0,79}$/.test(error?.code??'')?error.code:'RUNTIME_FAILED';process.stderr.write('TrustPR: '+code+'\n');process.exitCode=1;});
