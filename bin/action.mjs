@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
+import {TextDecoder} from 'node:util';
 import {parseStrictJson} from '../src/strict-json.mjs';
 import {runTrustPr} from '../src/runtime.mjs';
 import {createGithubHttpRequest} from '../src/github-http-transport.mjs';
@@ -24,6 +25,24 @@ export function renderActionStepSummary(receipt,canonicalMarkdown){
   const {changed_entries,checks}=receipt.core.observed;
   const files=changed_entries.length+' changed '+(changed_entries.length===1?'file':'files');
   const checksObserved=checks.length+' GitHub '+(checks.length===1?'check record':'check records');
+  // Presentation-only caution: invisible path code points can be mistaken for
+  // another filename. Exact original Git bytes stay in receipt.json raw_path_b64.
+  // This does not alter the frozen TRUSTPR-MD-V1 downloaded summary.
+  const decoder=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true});
+  let ambiguousPaths=0;
+  for(const entry of changed_entries){
+    if(typeof entry?.raw_path_b64!=='string')continue;
+    try{
+      const decoded=decoder.decode(Buffer.from(entry.raw_path_b64,'base64'));
+      if(/\p{Default_Ignorable_Code_Point}/u.test(decoded))ambiguousPaths++;
+    }catch{
+      // Non-UTF8 paths remain shown as raw base64 in canonical summary.md.
+    }
+  }
+  const pathCaution=ambiguousPaths
+    ?['**Filename caution:** '+ambiguousPaths+' changed '+(ambiguousPaths===1?'path contains':'paths contain')+
+      ' Unicode characters that may be invisible in a filename. Compare the exact `raw_path_b64` bytes in `receipt.json` before relying on a displayed path.', '']
+    :[];
   return [
     '# TrustPR — your PR at a glance',
     '',
@@ -31,6 +50,7 @@ export function renderActionStepSummary(receipt,canonicalMarkdown){
     '',
     '**What was recorded:** '+files+' and '+checksObserved+'. Some evidence may be missing; these counts are not test results.',
     '',
+    ...pathCaution,
     '**What is not proven:** That tests ran, that the code is safe, or that anyone approved a merge. GitHub checks can include TrustPR itself.',
     '',
     '**What to do:** Review the PR and run your normal checks. TrustPR never authorizes merging.',
