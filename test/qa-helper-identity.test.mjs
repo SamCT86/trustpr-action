@@ -9,7 +9,7 @@ const run={provider:'github',workflow_run_id:'opaque/run:1',run_attempt:'1',head
 const artifact={provider:'github',artifact_id:'artifact-1',producing_run_id:run.workflow_run_id,attempt:'1',retention_state:'available'};
 const check={...run,immutable_workflow_identity:'workflow-1',logical_job_identity:'unit',check_run_id:'check-1',
   app_identity:'actions',status:'completed',conclusion:'success'};
-const execution={...run,command:'npm test',exit_code:'0',evidence_id:'opaque/evidence:1'};
+const execution={...run,check_run_id:check.check_run_id,command:'npm test',exit_code:'0',evidence_id:'opaque/evidence:1'};
 
 test('contradictory duplicate run identities remain unknown in either order and after extra duplicate',()=>{
   for(const conflict of [{...run,head_sha:'b'.repeat(40)},{...run,check_suite_id:'different-suite'}]) {
@@ -109,11 +109,11 @@ test('within one opaque run, exact integer attempt ordering and historical reten
 });
 
 test('execution requires established identities and payload before observation',()=>{
-  for(const field of ['provider','workflow_run_id','run_attempt','head_sha','command','evidence_id']) {
+  for(const field of ['provider','workflow_run_id','run_attempt','head_sha','check_run_id','command','evidence_id']) {
     for(const value of [undefined,null,'',' ']) {
       const evidence={...execution,[field]:value};
       const subject={...check};
-      if(['provider','workflow_run_id','run_attempt','head_sha'].includes(field)) subject[field]=value;
+      if(['provider','workflow_run_id','run_attempt','head_sha','check_run_id'].includes(field)) subject[field]=value;
       const result=deriveTestExecutionEvidence([subject],[evidence],head)[0];
       assert.equal(result.state,'UNKNOWN',field+':'+String(value));
       assert.equal('command' in result,false);
@@ -126,7 +126,7 @@ test('execution requires established identities and payload before observation',
 });
 
 test('execution match remains exact in provider/run/attempt/head, with valid integer payloads',()=>{
-  for(const field of ['provider','workflow_run_id','run_attempt','head_sha']) {
+  for(const field of ['provider','workflow_run_id','run_attempt','head_sha','check_run_id']) {
     const value=field==='head_sha'?'b'.repeat(40):field==='run_attempt'?'2':'other';
     assert.equal(deriveTestExecutionEvidence([check],[{...execution,[field]:value}],head)[0].state,'UNKNOWN');
   }

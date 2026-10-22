@@ -11,14 +11,17 @@ function validSubject(item) {
 }
 
 function validExecution(item) {
-  return validSubject(item) && nonemptyText(item.evidence_id)
+  return validSubject(item) && nonemptyText(item.check_run_id)
+    && nonemptyText(item.evidence_id)
     && typeof item.command === 'string' && item.command.trim().length > 0 && !item.command.includes('\u0000')
     && (Number.isSafeInteger(item.exit_code)
       || (typeof item.exit_code === 'string' && /^(?:0|-?[1-9][0-9]*)$/u.test(item.exit_code)));
 }
 
 function sameExecutionSubject(check, evidence, expectedHead) {
-  return validSubject(check) && validExecution(evidence)
+  return validSubject(check) && nonemptyText(check.check_run_id)
+    && validExecution(evidence)
+    && evidence?.check_run_id === check?.check_run_id
     && evidence?.provider === check?.provider
     && evidence?.workflow_run_id === check?.workflow_run_id
     && evidence?.run_attempt === check?.run_attempt
@@ -28,19 +31,24 @@ function sameExecutionSubject(check, evidence, expectedHead) {
 
 export function deriveTestExecutionEvidence(checks, machineEvidence, expectedHead) {
   return checks.map((check) => {
-    const match = machineEvidence.find((evidence) => sameExecutionSubject(check, evidence, expectedHead));
+    // Run-level evidence must never be attributed to an unrelated check in the same run.
+    // More than one matching claim is ambiguous even when the caller repeats the same value.
+    const matches = machineEvidence.filter((evidence) => sameExecutionSubject(check, evidence, expectedHead));
+    const match = matches.length === 1 ? matches[0] : null;
     if (!match) {
       return {
         provider: check.provider,
+        check_run_id: check.check_run_id,
         workflow_run_id: check.workflow_run_id,
         run_attempt: check.run_attempt,
         head_sha: check.head_sha,
         state: 'UNKNOWN',
-        reason: 'NO_MACHINE_EXECUTION_EVIDENCE'
+        reason: matches.length > 1 ? 'MACHINE_EXECUTION_AMBIGUOUS' : 'NO_MACHINE_EXECUTION_EVIDENCE'
       };
     }
     return {
       provider: match.provider,
+      check_run_id: match.check_run_id,
       workflow_run_id: match.workflow_run_id,
       run_attempt: match.run_attempt,
       head_sha: match.head_sha,
