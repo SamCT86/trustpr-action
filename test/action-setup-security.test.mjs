@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 
+import * as liveSetup from '../src/action-setup.mjs';
+
 import {
   TRUSTPR_ACTION_REPOSITORY,
   buildTrustPrActionWorkflow,
-  renderTrustPrActionWorkflowYaml,
-  buildLane2ActionHandoff
+  renderTrustPrActionWorkflowYaml
 } from '../src/action-setup.mjs';
 
 const SHA = '0123456789abcdef0123456789abcdef01234567';
@@ -171,20 +172,19 @@ test('same reviewed inputs always regenerate byte-identical UTF-8 workflow', () 
   assert.equal(hashes.size, 1);
 });
 
-test('handoff preserves unresolved deployment/integration boundaries', () => {
-  const handoff = buildLane2ActionHandoff({
-    actionRepository: TRUSTPR_ACTION_REPOSITORY,
-    actionCommitSha: SHA,
-    integrationState: 'BLOCKED_SOURCE_BYTES_UNAVAILABLE'
-  });
-  assert.equal(handoff.full_v1_done, false);
-  assert.equal(handoff.github_effect_performed, false);
-  assert.equal(handoff.provider_effect_performed, false);
-  assert.equal(handoff.action_reference_state, 'CALLER_SUPPLIED_MUST_BE_REVERIFIED_BEFORE_PUBLICATION');
-  assert.deepEqual(handoff.non_claims, [
-    'NOT_GITHUB_PUBLISHED',
-    'NOT_DEPLOYED',
-    'NOT_FULL_RECEIPT_INTEGRATED',
-    'NOT_FULL_TRUSTPR_V1_DONE'
+test('only live read-only setup capabilities remain exported', () => {
+  assert.deepEqual(Object.keys(liveSetup).sort(), [
+    'ACTION_SETUP_PERMISSIONS',
+    'ACTION_SETUP_VERSION',
+    'TRUSTPR_ACTION_REPOSITORY',
+    'buildTrustPrActionWorkflow',
+    'renderTrustPrActionWorkflowYaml'
   ]);
+  const text = renderTrustPrActionWorkflowYaml({
+    actionRepository: TRUSTPR_ACTION_REPOSITORY,
+    actionCommitSha: SHA
+  });
+  assert.equal(text.includes('pull_request_target'), false);
+  assert.equal(text.includes(': write'), false);
+  assert.equal(text.includes('actions/checkout'), false);
 });

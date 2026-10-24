@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 
+import * as liveSetup from '../src/action-setup.mjs';
+
 import {
   ACTION_SETUP_VERSION,
   ACTION_SETUP_PERMISSIONS,
   buildTrustPrActionWorkflow,
-  renderTrustPrActionWorkflowYaml,
-  buildLane2ActionHandoff
+  renderTrustPrActionWorkflowYaml
 } from '../src/action-setup.mjs';
 
 const ACTION_REPO = 'SamCT86/trustpr-action';
@@ -145,31 +146,10 @@ test('untrusted PR expressions are data-only action inputs and never shell/env/c
   assert.equal(/\b(?:run|shell|env):/.test(text), false);
 });
 
-test('Lane2 handoff is explicit about unresolved identity, blocked integration, and ownership', () => {
-  const workflow = renderTrustPrActionWorkflowYaml({ actionRepository: ACTION_REPO, actionCommitSha: ACTION_SHA });
-  const handoff = buildLane2ActionHandoff({
-    actionRepository: ACTION_REPO,
-    actionCommitSha: ACTION_SHA,
-    integrationState: 'BLOCKED_SOURCE_BYTES_UNAVAILABLE'
-  });
-  assert.equal(handoff.schema, 'TRUSTPR_ACTION_LANE2_HANDOFF_V1');
-  assert.equal(handoff.github_write_owner, 'MIKE_LANE_2');
-  assert.equal(handoff.github_effect_performed, false);
-  assert.equal(handoff.provider_effect_performed, false);
-  assert.equal(handoff.external_service_account_required, false);
-  assert.equal(handoff.github_app_required, false);
-  assert.equal(handoff.repository_secrets_required, false);
-  assert.equal(handoff.write_token_required, false);
-  assert.equal(handoff.workflow_sha256, sha256(workflow));
-  assert.equal(handoff.action_reference, ACTION_REPO + '@' + ACTION_SHA);
-  assert.equal(handoff.full_receipt_integration, 'BLOCKED_SOURCE_BYTES_UNAVAILABLE');
-  assert.equal(handoff.full_v1_done, false);
-  assert.deepEqual(handoff.required_lane2_actions, [
-    'Create/publish the authorized TrustPR action repository and implementation under Lane2 GitHub write ownership.',
-    'Resolve the actual action repository and full immutable commit SHA; regenerate this workflow from the reviewed generator.',
-    'Re-run syntax/security verification on the exact regenerated workflow before GitHub publication.',
-    'Run a fork/Dependabot canary with read-only token and no secrets before broader rollout.'
-  ]);
+test('public setup module no longer exports the obsolete prepublication handoff', () => {
+  assert.equal(Object.hasOwn(liveSetup, 'buildLane2ActionHandoff'), false);
+  assert.equal(typeof liveSetup.buildTrustPrActionWorkflow, 'function');
+  assert.equal(typeof liveSetup.renderTrustPrActionWorkflowYaml, 'function');
 });
 
 test('setup inputs are closed and cannot accept caller security relaxations', () => {
@@ -191,22 +171,3 @@ test('setup inputs are closed and cannot accept caller security relaxations', ()
   }
 });
 
-test('handoff cannot self-upgrade the current historical-byte integration blocker', () => {
-  assert.throws(
-    () => buildLane2ActionHandoff({
-      actionRepository: ACTION_REPO,
-      actionCommitSha: ACTION_SHA,
-      integrationState: 'READY_FOR_INTEGRATION'
-    }),
-    (error) => error?.code === 'INTEGRATION_STATE_INVALID'
-  );
-  assert.throws(
-    () => buildLane2ActionHandoff({
-      actionRepository: ACTION_REPO,
-      actionCommitSha: ACTION_SHA,
-      integrationState: 'BLOCKED_SOURCE_BYTES_UNAVAILABLE',
-      githubWriteOwner: 'L3B'
-    }),
-    (error) => error?.code === 'ACTION_HANDOFF_INPUT_INVALID'
-  );
-});
