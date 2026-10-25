@@ -15,11 +15,18 @@ const GLOBAL_PAGE_LIMIT = 100;
 
 function normalizeSnapshot(raw) {
   const out = Object.fromEntries(SNAPSHOT_FIELDS.map((field) => [field, raw?.[field]]));
-  if (!SNAPSHOT_FIELDS.every((field) => typeof out[field] === 'string' && out[field].length > 0)) {
+  // A public PR may retain commit SHAs after GitHub removes its fork metadata.
+  // Diagnose this case without converting an INVALID Action outcome into green.
+  if (!SNAPSHOT_FIELDS.filter((field) => field !== 'head_repository_id')
+    .every((field) => typeof out[field] === 'string' && out[field].length > 0)) {
     throw new Error('identity');
   }
   if (![out.base_commit_sha, out.head_commit_sha].every((v) => FULL_OID.test(v))) throw new Error('identity');
   if (out.repository_id !== out.base_repository_id) throw new Error('identity');
+  if (out.head_repository_id == null) {
+    throw Object.assign(new Error('head repository unavailable'), { code: 'HEAD_REPOSITORY_UNAVAILABLE' });
+  }
+  if (typeof out.head_repository_id !== 'string' || out.head_repository_id.length === 0) throw new Error('identity');
   return out;
 }
 
@@ -255,8 +262,15 @@ async function readSnapshot(client, target) {
   }
   try {
     return { kind: 'ok', snapshot: normalizeSnapshot(raw) };
-  } catch {
-    return { kind: 'invalid', failure_code: 'PROVIDER_IDENTITY_SCHEMA_INVALID' };
+  } catch (error) {
+    // A missing fork is the specific cause only if the provider subject still
+    // matches the requested PR. Never obscure an event/repository mismatch.
+    const expectedSubjectMatches = raw?.pull_request_number === String(target.prNumber)
+      && (target.repositoryId == null || raw.repository_id === String(target.repositoryId))
+      && (target.expectedBaseSha == null || raw.base_commit_sha === target.expectedBaseSha)
+      && (target.expectedHeadSha == null || raw.head_commit_sha === target.expectedHeadSha);
+    return { kind: 'invalid', failure_code: error?.code === 'HEAD_REPOSITORY_UNAVAILABLE' && expectedSubjectMatches
+      ? 'HEAD_REPOSITORY_UNAVAILABLE' : 'PROVIDER_IDENTITY_SCHEMA_INVALID' };
   }
 }
 
