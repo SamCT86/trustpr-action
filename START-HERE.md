@@ -16,6 +16,8 @@ The pinned TrustPR Action itself doesn't check out or run the PR's code, approve
 
 `.github/workflows/trustpr.yml`
 
+> **Security before you paste:** The pinned Action is read-only, but a PR can change the workflow YAML itself. Review edits to `.github/workflows/trustpr.yml` before approving runs; never add secrets, write permissions, or steps that execute PR code.
+
 **3.** Paste **all** of the following into the editor:
 
 ```yaml
