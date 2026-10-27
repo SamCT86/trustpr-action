@@ -4,7 +4,7 @@
 
 TrustPR adds a readable report to a GitHub pull request (PR — a proposed code change). It shows **what changed**, **what GitHub reported**, and **what couldn't be confirmed**.
 
-It doesn't run the PR's code, approve changes, or merge anything. A green GitHub check does **not** mean the code is safe.
+The pinned TrustPR Action itself doesn't check out or run the PR's code, approve changes, or merge anything. A green GitHub check does **not** mean the code is safe.
 
 **Before you start:** You need a **public** GitHub repository where you can add a workflow file. TrustPR is free; GitHub Actions usage follows your GitHub plan.
 
@@ -15,6 +15,8 @@ It doesn't run the PR's code, approve changes, or merge anything. A green GitHub
 **2.** In the filename box, enter exactly:
 
 `.github/workflows/trustpr.yml`
+
+> **Security before you paste:** The pinned Action is read-only, but a PR can change the workflow YAML itself. Review edits to `.github/workflows/trustpr.yml` before approving runs; never add secrets, write permissions, or steps that execute PR code.
 
 **3.** Paste **all** of the following into the editor:
 
@@ -86,6 +88,8 @@ Two more labels explain the limits: **UNAUTHENTICATED** means the receipt is not
 - **Not sure what a PR is?** You can try this safely on a test repository first, with a harmless README change.
 
 ## Cost, security, and support
+
+**Workflow edits need review.** This copy-and-paste workflow has no step that runs PR code. However, GitHub's `pull_request` event uses workflow definitions from the PR's **merge commit**. Someone proposing a change to `.github/workflows/trustpr.yml` can therefore change the *workflow* that runs, even though the pinned TrustPR Action itself stays read-only. The permissions shown above are not an enforcement boundary against a PR-edited workflow. Review workflow-file changes before approving a run (especially on forks), and never add secrets, write permissions, or steps that execute untrusted PR code. See [GitHub's security explanation of the `pull_request` event](https://github.com/github/docs/blob/main/content/actions/reference/security/securely-using-pull_request_target.md).
 
 TrustPR itself is **free, MIT-licensed, and open source**. GitHub Actions usage and limits are governed by your GitHub plan. The pinned Action requests **read-only** GitHub permissions, does not run code from the PR, and does not merge or comment on anything. Downloadable reports can contain PR metadata, so avoid publishing reports that you would not otherwise share.
 
