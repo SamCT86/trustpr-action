@@ -8,6 +8,8 @@ The pinned TrustPR Action itself doesn't check out or run the PR's code, approve
 
 **Before you start:** You need a **public** GitHub repository where you can add a workflow file. TrustPR is free; GitHub Actions usage follows your GitHub plan.
 
+**Want to decide before installing?** [Try the one-minute, no-install comparison](https://github.com/SamCT86/trustpr-action/issues/11). It uses a real **first-party** run and asks whether this receipt helps beyond GitHub's own PR tabs. “No” is useful feedback; no star, account or endorsement requested.
+
 ## Add TrustPR to your repository
 
 **1.** On GitHub, open *your own repository*. Select **Add file → Create new file** (you may need to select the **Code** tab first).
