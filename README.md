@@ -90,6 +90,8 @@ This validates the bounded schema, subject identity and digest, then regenerates
 
 `action.yml` and `bin/action.mjs` implement the same runtime. The Action accepts only the `pull_request` event and binds repository, pull request number, base SHA and head SHA to that event before reading provider evidence. `pull_request_target` is rejected.
 
+**Security before copying:** The pinned TrustPR Action is read-only, but a pull request can change this `pull_request` workflow file. Same-repository PR workflow changes may execute without a maintainer approval prompt. Review workflow edits carefully; never add secrets, write permissions or steps that run untrusted PR code. For the five-step installation with a downloadable report, use [the five-step guide](https://github.com/SamCT86/trustpr-action/blob/6457de77ff1a3666674fac5e48dc6ec11f85186e/START-HERE.md). This workflow is not an immutable merge-policy gate.
+
 Save this as `.github/workflows/trustpr.yml` in a public consumer repository. The full commit pin identifies the verified v0.1.1 Action:
 
 ```yaml
