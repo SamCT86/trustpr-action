@@ -4,13 +4,13 @@
 
 TrustPR reads a GitHub pull request (a proposed code change) and creates a short report in GitHub Actions. You can see **what changed**, **what GitHub reported**, and **what's still unknown**.
 
-### [Add TrustPR to your public repository — five steps, no terminal →](START-HERE.md)
+### [Add TrustPR to your public repository — five steps, no terminal →](https://github.com/SamCT86/trustpr-action/blob/main/START-HERE.md)
 
 - **One file to copy.** No TrustPR account or payment. The tool is free and MIT-licensed; GitHub Actions usage depends on your GitHub plan.
 - **Read-only.** TrustPR does not run PR code, write to your repository, leave comments, or merge anything.
 - **No false green lights.** Expect a `PARTIAL` receipt when evidence is missing. Even a green GitHub job does **not** prove tests ran or say a change is safe to merge.
 
-**[See an actual first-party report](REAL-PUBLIC-EXAMPLE.md)** · **[Get help](https://github.com/SamCT86/trustpr-action/issues)** · **[v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1)**
+**[See an actual first-party report](https://github.com/SamCT86/trustpr-action/blob/main/REAL-PUBLIC-EXAMPLE.md)** · **[Get help](https://github.com/SamCT86/trustpr-action/issues)** · **[v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1)**
 
 The public, copy-and-paste setup is the simplest supported path. Private repositories require extra Git setup; see [advanced setup](#github-action). The example is from a maintainer-controlled repository, not an independent user's endorsement.
 
