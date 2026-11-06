@@ -16,7 +16,7 @@ The pinned TrustPR Action itself doesn't check out or run the PR's code, approve
 
 `.github/workflows/trustpr.yml`
 
-> **Security before you paste:** The pinned Action is read-only, but a PR can change the workflow YAML itself. Review edits to `.github/workflows/trustpr.yml` before approving runs; never add secrets, write permissions, or steps that execute PR code.
+> **Security before you paste:** The pinned Action is read-only, but a PR author can edit this `pull_request` workflow or skip its job. Same-repository PRs may run automatically, without a maintainer approval prompt. Review workflow-file changes **before trusting the checks**, not only before approving runs. Never add secrets, write permissions or steps that execute PR code. This receipt is **not an independent merge gate**.
 
 **3.** Paste **all** of the following into the editor:
 
