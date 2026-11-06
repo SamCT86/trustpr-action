@@ -7,7 +7,7 @@ TrustPR reads a GitHub pull request (a proposed code change) and creates a short
 ### [Add TrustPR to your public repository — five steps, no terminal →](START-HERE.md)
 
 - **One file to copy.** No TrustPR account or payment. The tool is free and MIT-licensed; GitHub Actions usage depends on your GitHub plan.
-- **Read-only.** TrustPR does not run PR code, write to your repository, leave comments, or merge anything.
+- **The pinned Action is read-only.** It does not run PR code, write to your repository, leave comments or merge. The surrounding `pull_request` workflow can be changed by a PR author; a green required check is **not** a trusted merge-policy guarantee.
 - **No false green lights.** Expect a `PARTIAL` receipt when evidence is missing. Even a green GitHub job does **not** prove tests ran or say a change is safe to merge.
 
 **[See an actual first-party report](REAL-PUBLIC-EXAMPLE.md)** · **[Get help](https://github.com/SamCT86/trustpr-action/issues)** · **[v0.1.1 prerelease](https://github.com/SamCT86/trustpr-action/releases/tag/v0.1.1)**
