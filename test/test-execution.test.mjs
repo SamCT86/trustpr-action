@@ -22,9 +22,9 @@ test('successful check name alone never proves command execution', () => {
   assert.equal('command' in out[0], false);
 });
 
-test('machine evidence bound to same head/run/attempt becomes OBSERVED', () => {
+test('machine evidence bound to exact check/head/run/attempt becomes OBSERVED', () => {
   const machine = [{
-    provider: 'github', workflow_run_id: '200', run_attempt: '1',
+    provider: 'github', check_run_id: '100', workflow_run_id: '200', run_attempt: '1',
     head_sha: head, command: 'npm test', exit_code: '0', evidence_id: 'exec-1'
   }];
   const out = deriveTestExecutionEvidence([check], machine, head);
@@ -35,7 +35,7 @@ test('machine evidence bound to same head/run/attempt becomes OBSERVED', () => {
 
 test('wrong-head machine evidence stays UNKNOWN', () => {
   const machine = [{
-    provider: 'github', workflow_run_id: '200', run_attempt: '1',
+    provider: 'github', check_run_id: '100', workflow_run_id: '200', run_attempt: '1',
     head_sha: 'b'.repeat(40), command: 'npm test', exit_code: '0', evidence_id: 'exec-2'
   }];
   const out = deriveTestExecutionEvidence([check], machine, head);
