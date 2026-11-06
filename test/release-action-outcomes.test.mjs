@@ -64,7 +64,7 @@ for(const fork of [false,true]) test(`Action coherent ${fork?'fork':'same-repo'}
   assert.equal(verifyReceipt(receipt).merge_authorized,false);
   const jobSummary=await fs.readFile(x.env.GITHUB_STEP_SUMMARY,'utf8');
   assert.match(jobSummary,/\*\*Result: PARTIAL\.\*\*/);
-  assert.match(jobSummary,/counts are not test results/);
+  assert.match(jobSummary,/not completeness claims or test results/);
   assert.match(jobSummary,/never authorizes merging/);
   assert.equal(await fs.readFile(outputs['summary-path'],'utf8'),renderTrustPrMarkdown(receipt));
   await assert.rejects(fs.stat(path.join(x.f.dir,'executed-pr-code')),{code:'ENOENT'});
@@ -96,12 +96,12 @@ test('Action rejects malformed Git directory input before any provider request',
 test('at-a-glance text reports check records but never upgrades them to test proof',()=>{
   const receipt={core:{validity:{status:'PARTIAL'},observed:{changed_entries:[{}],checks:[{}]}}};
   const result=renderActionStepSummary(receipt,'# canonical receipt\n');
-  assert.match(result,/1 changed file and 1 GitHub check record/);
+  assert.match(result,/1 changed file observed and 1 GitHub check record observed/);
   assert.match(result,/GitHub checks can include TrustPR itself/);
   receipt.core.observed.changed_entries.push({});
   receipt.core.observed.checks.length=0;
   const other=renderActionStepSummary(receipt,'# canonical receipt\n');
-  assert.match(other,/2 changed files and 0 GitHub check records/);
+  assert.match(other,/2 changed files observed and 0 GitHub check records observed/);
   receipt.core.observed.changed_entries.pop();
   receipt.core.observed.checks.push({});
   assert.match(result,/tests ran/);
