@@ -20,7 +20,7 @@ function assertSafeBeginnerWorkflow(yaml){
 }
 
 test('published beginner guide gives one usable PR workflow with no shell or write permission',async()=>{
- const source=await fs.readFile(path.join(root,'START-HERE.md'),'utf8');
+ const source=(await fs.readFile(path.join(root,'START-HERE.md'),'utf8')).replace(/\r\n/g,'\n');
  const samples=[...source.matchAll(/```yaml\n([\s\S]*?)\n```/g)];
  assert.equal(samples.length,1,'exactly one unambiguous copy/paste workflow');
  const yaml=samples[0][1];
@@ -49,7 +49,7 @@ test('published beginner guide gives one usable PR workflow with no shell or wri
  assert.ok(source.includes('UNAUTHENTICATED')&&source.includes('POLICY_UNBOUND'));
 });
 test('beginner workflow guard rejects unsafe substitutions and extra executable steps',async()=>{
- const source=await fs.readFile(path.join(root,'START-HERE.md'),'utf8');
+ const source=(await fs.readFile(path.join(root,'START-HERE.md'),'utf8')).replace(/\r\n/g,'\n');
  const yaml=[...source.matchAll(/```yaml\n([\s\S]*?)\n```/g)][0][1];
  const invalid=[
   ['extra shell step',yaml.replace('    steps:\n','    steps:\n      - run: echo unsafe\n')],
@@ -70,8 +70,8 @@ test('beginner workflow guard rejects unsafe substitutions and extra executable 
 });
 
 test('newcomer recipe names only the actual Action input/output public contract',async()=>{
- const guide=await fs.readFile(path.join(root,'START-HERE.md'),'utf8');
- const manifest=await fs.readFile(path.join(root,'action.yml'),'utf8');
+ const guide=(await fs.readFile(path.join(root,'START-HERE.md'),'utf8')).replace(/\r\n/g,'\n');
+ const manifest=(await fs.readFile(path.join(root,'action.yml'),'utf8')).replace(/\r\n/g,'\n');
  for(const input of ['repository','pull-request-number','base-sha','head-sha'])
   assert.match(manifest,new RegExp('^  '+input+':$','m'),'GitHub Action input '+input);
  for(const output of ['receipt-path','summary-path'])
@@ -80,4 +80,19 @@ test('newcomer recipe names only the actual Action input/output public contract'
   assert.ok(guide.includes('          '+input+':'),'documented input '+input);
  for(const output of ['receipt-path','summary-path'])
   assert.ok(guide.includes('steps.receipt.outputs.'+output),'documented output '+output);
+});
+
+// Documentation security claims are part of the public trust contract.
+test('beginner-facing warnings disclose PR-editable workflows before installation',async()=>{
+ const guide=(await fs.readFile(path.join(root,'START-HERE.md'),'utf8')).replace(/\r\n/g,'\n');
+ const beforeCopy=guide.slice(0,guide.indexOf('```yaml'));
+ assert.match(beforeCopy,/Same-repository PRs may run automatically/);
+ assert.match(beforeCopy,/without a maintainer approval prompt/);
+ assert.match(beforeCopy,/before trusting the checks/);
+ assert.match(beforeCopy,/not an independent merge gate/);
+ const readme=await fs.readFile(path.join(root,'README.md'),'utf8');
+ const intro=readme.slice(0,readme.indexOf('## For developers'));
+ assert.match(intro,/The pinned Action is read-only/);
+ assert.match(intro,/surrounding `pull_request` workflow can be changed/);
+ assert.match(intro,/not.*trusted merge-policy guarantee/);
 });
